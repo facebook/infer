@@ -2460,6 +2460,26 @@ and pulse_havoc_arguments =
     "Heuristically havoc arguments to unknown functions."
 
 
+and pulse_havoc_interrupted_loops =
+  CLOpt.mk_bool ~long:"pulse-havoc-interrupted-loops"
+    ~in_help:InferCommand.[(Analyze, manual_pulse)]
+    "[EXPERIMENTAL] When $(b,--pulse-widen-threshold) stops the exploration of a loop, continue \
+     after the loop from copies of the dropped states in which what the loop body may modify, \
+     found syntactically, is havoced. Without this option, the code after a loop that needs more \
+     iterations to exit, for instance a loop with a constant bound, is not analyzed. This is not \
+     sound and reports both true and false positives in that code. Havoced variables (counters, \
+     accumulators, flags) lose their final value. Some memory that the remaining iterations may \
+     write keeps the value it had when the loop was cut, or before the call when callers can see \
+     it: pointers only updated from their own value (like $(i,p++)) and the memory written through \
+     them, the array elements and the memory written by callees that the explored iterations did \
+     not access, globals written only by callees, and memory written through pointers assigned in \
+     the loop, loaded from memory (like $(i,p->q->f)), or returned by calls. The code after some \
+     infinite loops becomes reachable too. It mainly helps loops entered with few disjuncts and \
+     with few paths through their body: the copies are lost when the loop reaches the \
+     $(b,--pulse-max-disjuncts) limit. Only for languages where unknown calls havoc their \
+     arguments (not Java, Hack, or Python)."
+
+
 and pulse_inline_global_init_func_pointer =
   CLOpt.mk_bool ~long:"pulse-inline-global-init-func-pointer" ~default:false
     ~in_help:InferCommand.[(Analyze, manual_pulse)]
@@ -4677,6 +4697,8 @@ and pulse_experimental_infinite_loop_checker = !pulse_experimental_infinite_loop
 and pulse_experimental_track_all_unknown_calls = !pulse_experimental_track_all_unknown_calls
 
 and pulse_havoc_arguments = !pulse_havoc_arguments
+
+and pulse_havoc_interrupted_loops = !pulse_havoc_interrupted_loops
 
 and pulse_inline_global_init_func_pointer = !pulse_inline_global_init_func_pointer
 

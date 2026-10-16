@@ -43,6 +43,8 @@ val continue : AbductiveDomain.t -> t
 
 val summary_of_stopped_execution : stopped_execution -> AbductiveDomain.Summary.t
 
+val is_from_interrupted_loop : t -> bool
+
 type summary = AbductiveDomain.Summary.t base_t [@@deriving compare, equal, yojson_of]
 
 val pp_summary : Pp.print_kind -> F.formatter -> summary -> unit

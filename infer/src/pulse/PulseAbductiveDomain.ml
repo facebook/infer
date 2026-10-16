@@ -85,6 +85,7 @@ type t =
   ; loop_header_info: (PulseLoopHeaderInfo.t[@yojson.opaque])
   ; loop_invariant_under_inference: (loop_invariant_under_inference option[@yojson.opaque])
   ; unknown_values: bool
+  ; from_interrupted_loop: bool
   ; skipped_calls: SkippedCalls.t }
 
 and loop_invariant_under_inference =
@@ -106,6 +107,7 @@ let pp_ ~is_summary f
      ; loop_header_info
      ; loop_invariant_under_inference
      ; unknown_values
+     ; from_interrupted_loop
      ; skipped_calls }
      [@warning "+missing-record-field-pattern"] ) =
   let pp_decompiler f =
@@ -130,14 +132,15 @@ let pp_ ~is_summary f
      recursive_calls=%a@;\
      loop_header_info=%a@;\
      %tunknown_values=%b@;\
+     from_interrupted_loop=%b@;\
      skipped_calls=%a@;\
      Topl=%a@;\
      TreeBorrows=%a@]"
     Formula.pp path_condition pp_pre_post pp_decompiler AbstractValue.Set.pp
     need_dynamic_type_specialization TransitiveInfo.pp transitive_info PulseMutualRecursion.Set.pp
     recursive_calls PulseLoopHeaderInfo.pp loop_header_info pp_loop_invariant_under_inference
-    unknown_values SkippedCalls.pp skipped_calls PulseTopl.pp_state topl PulseTreeBorrows.pp
-    tree_borrows
+    unknown_values from_interrupted_loop SkippedCalls.pp skipped_calls PulseTopl.pp_state topl
+    PulseTreeBorrows.pp tree_borrows
 
 
 let pp = pp_ ~is_summary:false
@@ -1557,12 +1560,13 @@ let empty =
   ; loop_header_info= PulseLoopHeaderInfo.empty
   ; loop_invariant_under_inference= None
   ; unknown_values= false
+  ; from_interrupted_loop= false
   ; skipped_calls= SkippedCalls.empty }
 
 
 let mk_join_state ~pre:(stack_pre, heap_pre, attrs_pre) ~post:(stack_post, heap_post, attrs_post)
     path_condition decompiler ~need_dynamic_type_specialization topl transitive_info recursive_calls
-    loop_header_info ~unknown_values skipped_calls =
+    loop_header_info ~unknown_values ~from_interrupted_loop skipped_calls =
   { pre= PreDomain.update empty.pre ~stack:stack_pre ~heap:heap_pre ~attrs:attrs_pre
   ; post= PostDomain.update empty.post ~stack:stack_post ~heap:heap_post ~attrs:attrs_post
   ; path_condition
@@ -1575,6 +1579,7 @@ let mk_join_state ~pre:(stack_pre, heap_pre, attrs_pre) ~post:(stack_post, heap_
   ; loop_header_info
   ; loop_invariant_under_inference= None
   ; unknown_values
+  ; from_interrupted_loop
   ; skipped_calls }
 
 
@@ -2235,6 +2240,8 @@ module Summary = struct
 
   let contains_unknown_values {unknown_values} = unknown_values
 
+  let is_from_interrupted_loop {from_interrupted_loop} = from_interrupted_loop
+
   let get_skipped_calls {skipped_calls} = skipped_calls
 
   let is_heap_allocated = is_heap_allocated
@@ -2445,6 +2452,8 @@ let add_skipped_calls new_skipped_calls astate =
 
 
 let declare_unknown_values astate = {astate with unknown_values= true}
+
+let set_from_interrupted_loop astate = {astate with from_interrupted_loop= true}
 
 let transfer_transitive_info_to_caller callee_pname call_loc summary caller_astate =
   let caller = caller_astate.transitive_info in

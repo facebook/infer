@@ -89,6 +89,10 @@ let to_astate = function
       astate
 
 
+let is_from_interrupted_loop exec_state =
+  (to_astate exec_state).AbductiveDomain.from_interrupted_loop
+
+
 let pp_header kind fmt = function
   | ContinueProgram _ ->
       F.pp_print_string fmt "ContinueProgram"
