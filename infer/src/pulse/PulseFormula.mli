@@ -165,6 +165,15 @@ val as_constant_string : t -> Var.t -> string option
 
 val is_known_non_pointer : t -> Var.t -> bool
 
+val get_constant_condition_depth : t -> Var.t -> int option
+(** the smallest call depth of the conditions of the form [a·v+b=c] (for constants [a], [b], and
+    [c]) if any, i.e. of the conditions that make [v] equal to a constant on their own (see
+    [is_manifest]) *)
+
+val raise_depth_of_conditions_on : Var.t -> depth:int -> t -> t
+(** [raise_depth_of_conditions_on v ~depth phi] makes the conditions that mention [v] come from a
+    call depth of at least [depth] (see [is_manifest]) *)
+
 val is_manifest : is_allocated:(Var.t -> bool) -> t -> bool
 (** Some types or errors detected by Pulse require that the state be *manifest*, which corresponds
     to the fact that the error can happen in *any reasonable* calling context (see below). If not,

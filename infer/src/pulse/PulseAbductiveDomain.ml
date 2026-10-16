@@ -2086,6 +2086,39 @@ let discard_unreachable_ ~for_summary ({pre; post} as astate) =
   (astate, pre_addresses, post_addresses, dead_addresses)
 
 
+let pre_cell_values (pre : PreDomain.t) =
+  RawMemory.fold
+    (fun _addr edges values ->
+      RawMemory.Edges.fold edges ~init:values ~f:(fun values (_access, (value, _history)) ->
+          value :: values ) )
+    (pre :> BaseDomain.t).heap []
+
+
+(* After canonicalization, cells of the pre heap that are equal to the same constant hold the same
+   value. This is not an assumption that the cells are aliases (see
+   [Summary.pre_heap_has_assumptions]) provided that the conditions on that value are as latent as
+   the conditions that made each of the cells equal to the constant. A cell without such a condition
+   of its own, or that held the same value as another cell already, got its value from a callee that
+   assumed that the cells were aliases. *)
+let raise_depth_of_shared_constants astate0 pre path_condition =
+  let phi0 = astate0.path_condition in
+  let cells0 = lazy (pre_cell_values astate0.pre) in
+  let depth_of_cells v =
+    let repr = Formula.get_var_repr phi0 v in
+    let cells =
+      List.filter (Lazy.force cells0) ~f:(fun v0 ->
+          AbstractValue.equal repr (Formula.get_var_repr phi0 v0) )
+    in
+    let init = if List.contains_dup cells ~compare:AbstractValue.compare then 1 else 0 in
+    List.fold cells ~init ~f:(fun depth v0 ->
+        Formula.get_constant_condition_depth phi0 v0 |> Option.value ~default:1 |> Int.max depth )
+  in
+  List.find_all_dups (pre_cell_values pre) ~compare:AbstractValue.compare
+  |> List.fold ~init:path_condition ~f:(fun path_condition v ->
+      if Option.is_none (Formula.get_constant_condition_depth path_condition v) then path_condition
+      else Formula.raise_depth_of_conditions_on v ~depth:(depth_of_cells v) path_condition )
+
+
 let filter_for_summary proc_name location astate0 =
   let open SatUnsat.Import in
   L.d_printfln "state *before* calling canonicalize:" ;
@@ -2116,6 +2149,7 @@ let filter_for_summary proc_name location astate0 =
   let+ path_condition, live_via_arithmetic, new_eqs =
     Formula.simplify ~precondition_vocabulary ~keep:live_addresses astate.path_condition
   in
+  let path_condition = raise_depth_of_shared_constants astate0 astate.pre path_condition in
   (* [unsafe_cast_set] is safe because a) all the values are actually canon_values in disguise,
      and b) we have canonicalised all the values in the state already so all we have left are
      canonical values *)
@@ -2373,7 +2407,10 @@ module Summary = struct
         L.d_printfln_escaped "assumption detected: %a is in the pre heap and is restricted (>= 0)"
           AbstractValue.pp addr ;
         raise_notrace AssumptionDetected )
-      else if AbstractValue.Set.mem addr seen then (
+      else if
+        AbstractValue.Set.mem addr seen
+        && Option.is_none (Formula.get_constant_condition_depth astate.path_condition addr)
+      then (
         L.d_printfln_escaped
           "assumption detected: %a is reachable in the pre heap from at least two different paths"
           AbstractValue.pp addr ;
