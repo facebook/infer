@@ -538,6 +538,10 @@ module ItvPure = struct
 
   let has_void_ptr_symb x = Bound.has_void_ptr_symb (lb x) || Bound.has_void_ptr_symb (ub x)
 
+  let change_byte_unit ~from ~to_ (l, u) =
+    Option.both (Bound.change_byte_unit ~from ~to_ l) (Bound.change_byte_unit ~from ~to_ u)
+
+
   let is_incr_of path x = Bound.is_incr_of path (lb x) && Bound.is_incr_of path (ub x)
 end
 
@@ -780,6 +784,11 @@ let of_modeled_path path = NonBottom (ItvPure.of_modeled_path path)
 let is_offset_path_of path = bind1_gen ~bot:false (ItvPure.is_offset_path_of path)
 
 let is_length_path_of path = bind1_gen ~bot:false (ItvPure.is_length_path_of path)
+
+let change_byte_unit ~from ~to_ =
+  bind1_gen ~bot:None (fun x ->
+      ItvPure.change_byte_unit ~from ~to_ x |> Option.map ~f:(fun x -> NonBottom x) )
+
 
 let has_only_non_int_symbols = bind1bool ItvPure.has_only_non_int_symbols
 

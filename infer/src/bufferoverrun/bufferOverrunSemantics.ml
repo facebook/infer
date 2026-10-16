@@ -472,6 +472,11 @@ and eval_locpath ~mode params p mem =
 
 
 let eval_sympath ~mode params sympath mem =
+  let cost_mode = is_cost_mode mode in
+  let eval_array p ~f =
+    let v = eval_sympath_partial ~mode params p mem in
+    (f (Val.get_array_blk v), Val.get_traces v)
+  in
   match sympath with
   | Symb.SymbolPath.Modeled p ->
       let v = eval_sympath_modeled_partial ~mode p in
@@ -479,12 +484,14 @@ let eval_sympath ~mode params sympath mem =
   | Symb.SymbolPath.Normal p ->
       let v = eval_sympath_partial ~mode params p mem in
       (Val.get_itv v, Val.get_traces v)
-  | Symb.SymbolPath.Offset {p} ->
-      let v = eval_sympath_partial ~mode params p mem in
-      (ArrayBlk.get_offset ~cost_mode:(is_cost_mode mode) (Val.get_array_blk v), Val.get_traces v)
-  | Symb.SymbolPath.Length {p} ->
-      let v = eval_sympath_partial ~mode params p mem in
-      (ArrayBlk.get_size ~cost_mode:(is_cost_mode mode) (Val.get_array_blk v), Val.get_traces v)
+  | Symb.SymbolPath.Offset {p; byte_unit= None} ->
+      eval_array p ~f:(ArrayBlk.get_offset ~cost_mode)
+  | Symb.SymbolPath.Offset {p; byte_unit= Some n} ->
+      eval_array p ~f:(ArrayBlk.get_offset_in_units ~cost_mode n)
+  | Symb.SymbolPath.Length {p; byte_unit= None} ->
+      eval_array p ~f:(ArrayBlk.get_size ~cost_mode)
+  | Symb.SymbolPath.Length {p; byte_unit= Some n} ->
+      eval_array p ~f:(ArrayBlk.get_size_in_units ~cost_mode n)
 
 
 let mk_eval_sym_trace ?(is_args_ref = false) integer_type_widths
