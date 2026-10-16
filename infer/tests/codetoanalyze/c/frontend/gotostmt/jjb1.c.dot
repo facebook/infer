@@ -19,16 +19,16 @@ digraph cfg {
 	
 
 	 "jjb1.9d6085e324f8fe61_5" -> "jjb1.9d6085e324f8fe61_4" ;
-"jjb1.9d6085e324f8fe61_6" [label="6:  BinaryOperatorStmt: Div \n   n$1=*&x:int [line 14, column 7]\n " shape="box"]
+"jjb1.9d6085e324f8fe61_6" [label="6:  BinaryOperatorStmt: Div \n   n$0=*&x:int [line 14, column 7]\n " shape="box"]
 	
 
 	 "jjb1.9d6085e324f8fe61_6" -> "jjb1.9d6085e324f8fe61_7" ;
 	 "jjb1.9d6085e324f8fe61_6" -> "jjb1.9d6085e324f8fe61_8" ;
-"jjb1.9d6085e324f8fe61_7" [label="7: Prune (true branch, if) \n   PRUNE((n$1 / 2), true); [line 14, column 7]\n " shape="invhouse"]
+"jjb1.9d6085e324f8fe61_7" [label="7: Prune (true branch, if) \n   PRUNE((n$0 / 2), true); [line 14, column 7]\n " shape="invhouse"]
 	
 
 	 "jjb1.9d6085e324f8fe61_7" -> "jjb1.9d6085e324f8fe61_16" ;
-"jjb1.9d6085e324f8fe61_8" [label="8: Prune (false branch, if) \n   PRUNE(!(n$1 / 2), false); [line 14, column 7]\n " shape="invhouse"]
+"jjb1.9d6085e324f8fe61_8" [label="8: Prune (false branch, if) \n   PRUNE(!(n$0 / 2), false); [line 14, column 7]\n " shape="invhouse"]
 	
 
 	 "jjb1.9d6085e324f8fe61_8" -> "jjb1.9d6085e324f8fe61_9" ;
@@ -36,11 +36,11 @@ digraph cfg {
 	
 
 	 "jjb1.9d6085e324f8fe61_9" -> "jjb1.9d6085e324f8fe61_18" ;
-"jjb1.9d6085e324f8fe61_10" [label="10:  Call _fun_print_int \n   n$3=*&x:int [line 19, column 15]\n  n$4=_fun_print_int(n$3:int) [line 19, column 5]\n " shape="box"]
+"jjb1.9d6085e324f8fe61_10" [label="10:  Call _fun_print_int \n   n$2=*&x:int [line 19, column 15]\n  n$3=_fun_print_int(n$2:int) [line 19, column 5]\n " shape="box"]
 	
 
 	 "jjb1.9d6085e324f8fe61_10" -> "jjb1.9d6085e324f8fe61_9" ;
-"jjb1.9d6085e324f8fe61_11" [label="11:  UnaryOperator \n   n$5=*&x:int [line 18, column 5]\n  *&x:int=(n$5 - 1) [line 18, column 5]\n " shape="box"]
+"jjb1.9d6085e324f8fe61_11" [label="11:  UnaryOperator \n   n$4=*&x:int [line 18, column 5]\n  *&x:int=(n$4 - 1) [line 18, column 5]\n " shape="box"]
 	
 
 	 "jjb1.9d6085e324f8fe61_11" -> "jjb1.9d6085e324f8fe61_10" ;
@@ -48,16 +48,16 @@ digraph cfg {
 	
 
 	 "jjb1.9d6085e324f8fe61_12" -> "jjb1.9d6085e324f8fe61_11" ;
-"jjb1.9d6085e324f8fe61_13" [label="13:  BinaryOperatorStmt: LE \n   n$6=*&x:int [line 16, column 9]\n " shape="box"]
+"jjb1.9d6085e324f8fe61_13" [label="13:  BinaryOperatorStmt: LE \n   n$5=*&x:int [line 16, column 9]\n " shape="box"]
 	
 
 	 "jjb1.9d6085e324f8fe61_13" -> "jjb1.9d6085e324f8fe61_14" ;
 	 "jjb1.9d6085e324f8fe61_13" -> "jjb1.9d6085e324f8fe61_15" ;
-"jjb1.9d6085e324f8fe61_14" [label="14: Prune (true branch, if) \n   PRUNE((n$6 <= 0), true); [line 16, column 9]\n " shape="invhouse"]
+"jjb1.9d6085e324f8fe61_14" [label="14: Prune (true branch, if) \n   PRUNE((n$5 <= 0), true); [line 16, column 9]\n " shape="invhouse"]
 	
 
 	 "jjb1.9d6085e324f8fe61_14" -> "jjb1.9d6085e324f8fe61_4" ;
-"jjb1.9d6085e324f8fe61_15" [label="15: Prune (false branch, if) \n   PRUNE(!(n$6 <= 0), false); [line 16, column 9]\n " shape="invhouse"]
+"jjb1.9d6085e324f8fe61_15" [label="15: Prune (false branch, if) \n   PRUNE(!(n$5 <= 0), false); [line 16, column 9]\n " shape="invhouse"]
 	
 
 	 "jjb1.9d6085e324f8fe61_15" -> "jjb1.9d6085e324f8fe61_12" ;
@@ -65,15 +65,15 @@ digraph cfg {
 	
 
 	 "jjb1.9d6085e324f8fe61_16" -> "jjb1.9d6085e324f8fe61_13" ;
-"jjb1.9d6085e324f8fe61_17" [label="17:  Call _fun_print_int \n   n$12=*&y:int [line 24, column 15]\n  n$13=_fun_print_int(n$12:int) [line 24, column 5]\n " shape="box"]
+"jjb1.9d6085e324f8fe61_17" [label="17:  Call _fun_print_int \n   n$10=*&y:int [line 24, column 15]\n  n$11=_fun_print_int(n$10:int) [line 24, column 5]\n " shape="box"]
 	
 
 	 "jjb1.9d6085e324f8fe61_17" -> "jjb1.9d6085e324f8fe61_16" ;
-"jjb1.9d6085e324f8fe61_18" [label="18:  UnaryOperator \n   n$14=*&y:int [line 23, column 5]\n  *&y:int=(n$14 + 1) [line 23, column 5]\n " shape="box"]
+"jjb1.9d6085e324f8fe61_18" [label="18:  UnaryOperator \n   n$12=*&y:int [line 23, column 5]\n  *&y:int=(n$12 + 1) [line 23, column 5]\n " shape="box"]
 	
 
 	 "jjb1.9d6085e324f8fe61_18" -> "jjb1.9d6085e324f8fe61_17" ;
-"jjb1.9d6085e324f8fe61_19" [label="19:  UnaryOperator \n   n$17=*&x:int [line 13, column 3]\n  *&x:int=(n$17 + 1) [line 13, column 3]\n " shape="box"]
+"jjb1.9d6085e324f8fe61_19" [label="19:  UnaryOperator \n   n$14=*&x:int [line 13, column 3]\n  *&x:int=(n$14 + 1) [line 13, column 3]\n " shape="box"]
 	
 
 	 "jjb1.9d6085e324f8fe61_19" -> "jjb1.9d6085e324f8fe61_6" ;

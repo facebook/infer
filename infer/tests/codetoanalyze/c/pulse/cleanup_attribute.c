@@ -107,6 +107,19 @@ void cleanup_double_free_on_break_bad(int n) {
   }
 }
 
+void cleanup_double_free_on_continue_in_switch_bad(int n, int k) {
+  for (int i = 0; i < n; i++) {
+    __attribute__((cleanup(cleanup_int))) int* x = malloc(sizeof(int));
+    switch (k) {
+      case 0:
+        free(x);
+        continue;
+      default:
+        break;
+    }
+  }
+}
+
 void cleanup_in_statement_expression_bad() {
   int r = ({
     __attribute__((cleanup(cleanup_int))) int* x = malloc(sizeof(int));
@@ -189,4 +202,22 @@ void cleanup_goto_after_reset_ok(int b) {
   }
 out:
   return;
+}
+
+#define SKIP_IF(cond, stmt) \
+  do {                      \
+    __label__ skip;         \
+    if (cond) {             \
+      goto skip;            \
+    }                       \
+    stmt;                   \
+  skip:;                    \
+  } while (0)
+
+void cleanup_local_labels_with_same_name_ok(int b) {
+  {
+    __attribute__((cleanup(cleanup_int))) int* x = malloc(sizeof(int));
+    SKIP_IF(b, b++);
+  }
+  SKIP_IF(b, b++);
 }

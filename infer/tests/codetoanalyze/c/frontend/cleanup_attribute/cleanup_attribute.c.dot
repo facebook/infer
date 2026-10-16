@@ -33,7 +33,7 @@ digraph cfg {
 	
 
 	 "gotos.d74517f5d832f214_5" -> "gotos.d74517f5d832f214_4" ;
-"gotos.d74517f5d832f214_6" [label="6:  Destruction(Scope) \n   n$8=_fun_cleanup_int(&z:int*) [line 58, column 3]\n " shape="box"]
+"gotos.d74517f5d832f214_6" [label="6:  Destruction(Scope) \n   n$7=_fun_cleanup_int(&z:int*) [line 58, column 3]\n " shape="box"]
 	
 
 	 "gotos.d74517f5d832f214_6" -> "gotos.d74517f5d832f214_5" ;
@@ -41,20 +41,20 @@ digraph cfg {
 	
 
 	 "gotos.d74517f5d832f214_7" -> "gotos.d74517f5d832f214_6" ;
-"gotos.d74517f5d832f214_8" [label="8:  BinaryOperatorStmt: GT \n   n$10=*&n:int [line 55, column 9]\n " shape="box"]
+"gotos.d74517f5d832f214_8" [label="8:  BinaryOperatorStmt: GT \n   n$9=*&n:int [line 55, column 9]\n " shape="box"]
 	
 
 	 "gotos.d74517f5d832f214_8" -> "gotos.d74517f5d832f214_9" ;
 	 "gotos.d74517f5d832f214_8" -> "gotos.d74517f5d832f214_10" ;
-"gotos.d74517f5d832f214_9" [label="9: Prune (true branch, if) \n   PRUNE((n$10 > 0), true); [line 55, column 9]\n " shape="invhouse"]
+"gotos.d74517f5d832f214_9" [label="9: Prune (true branch, if) \n   PRUNE((n$9 > 0), true); [line 55, column 9]\n " shape="invhouse"]
 	
 
 	 "gotos.d74517f5d832f214_9" -> "gotos.d74517f5d832f214_11" ;
-"gotos.d74517f5d832f214_10" [label="10: Prune (false branch, if) \n   PRUNE(!(n$10 > 0), false); [line 55, column 9]\n " shape="invhouse"]
+"gotos.d74517f5d832f214_10" [label="10: Prune (false branch, if) \n   PRUNE(!(n$9 > 0), false); [line 55, column 9]\n " shape="invhouse"]
 	
 
 	 "gotos.d74517f5d832f214_10" -> "gotos.d74517f5d832f214_7" ;
-"gotos.d74517f5d832f214_11" [label="11:  Destruction(goto) \n   n$11=_fun_cleanup_int(&z:int*) [line 56, column 12]\n " shape="box"]
+"gotos.d74517f5d832f214_11" [label="11:  Destruction(goto) \n   n$10=_fun_cleanup_int(&z:int*) [line 56, column 12]\n " shape="box"]
 	
 
 	 "gotos.d74517f5d832f214_11" -> "gotos.d74517f5d832f214_5" ;
@@ -62,16 +62,16 @@ digraph cfg {
 	
 
 	 "gotos.d74517f5d832f214_12" -> "gotos.d74517f5d832f214_8" ;
-"gotos.d74517f5d832f214_13" [label="13:  BinaryOperatorStmt: GT \n   n$16=*&n:int [line 52, column 9]\n  *&n:int=(n$16 - 1) [line 52, column 9]\n " shape="box"]
+"gotos.d74517f5d832f214_13" [label="13:  BinaryOperatorStmt: GT \n   n$15=*&n:int [line 52, column 9]\n  *&n:int=(n$15 - 1) [line 52, column 9]\n " shape="box"]
 	
 
 	 "gotos.d74517f5d832f214_13" -> "gotos.d74517f5d832f214_14" ;
 	 "gotos.d74517f5d832f214_13" -> "gotos.d74517f5d832f214_15" ;
-"gotos.d74517f5d832f214_14" [label="14: Prune (true branch, if) \n   PRUNE((n$16 > 1), true); [line 52, column 9]\n " shape="invhouse"]
+"gotos.d74517f5d832f214_14" [label="14: Prune (true branch, if) \n   PRUNE((n$15 > 1), true); [line 52, column 9]\n " shape="invhouse"]
 	
 
 	 "gotos.d74517f5d832f214_14" -> "gotos.d74517f5d832f214_17" ;
-"gotos.d74517f5d832f214_15" [label="15: Prune (false branch, if) \n   PRUNE(!(n$16 > 1), false); [line 52, column 9]\n " shape="invhouse"]
+"gotos.d74517f5d832f214_15" [label="15: Prune (false branch, if) \n   PRUNE(!(n$15 > 1), false); [line 52, column 9]\n " shape="invhouse"]
 	
 
 	 "gotos.d74517f5d832f214_15" -> "gotos.d74517f5d832f214_12" ;
@@ -79,7 +79,7 @@ digraph cfg {
 	
 
 	 "gotos.d74517f5d832f214_16" -> "gotos.d74517f5d832f214_19" ;
-"gotos.d74517f5d832f214_17" [label="17:  Destruction(goto) \n   n$17=_fun_cleanup_int(&z:int*) [line 53, column 12]\n  n$18=_fun_cleanup_int(&y:int*) [line 53, column 12]\n " shape="box"]
+"gotos.d74517f5d832f214_17" [label="17:  Destruction(goto) \n   n$16=_fun_cleanup_int(&z:int*) [line 53, column 12]\n  n$17=_fun_cleanup_int(&y:int*) [line 53, column 12]\n " shape="box"]
 	
 
 	 "gotos.d74517f5d832f214_17" -> "gotos.d74517f5d832f214_16" ;

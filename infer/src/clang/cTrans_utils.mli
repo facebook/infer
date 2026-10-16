@@ -257,7 +257,7 @@ end
 
 (** Module for translating goto instructions by keeping a map of labels. *)
 module GotoLabel : sig
-  val find_goto_label : CContext.t -> string -> Location.t -> Procdesc.Node.t
+  val find_goto_label : CContext.t -> Clang_ast_t.pointer -> string -> Location.t -> Procdesc.Node.t
 end
 
 (** Module that provides utility functions for translating different types of loops. *)

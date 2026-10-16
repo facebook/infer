@@ -244,6 +244,63 @@ digraph cfg {
 	
 
 	 "test_for_range#continue_scope#993.fa75d7368d8f711a_25" -> "test_for_range#continue_scope#993.fa75d7368d8f711a_24" ;
+"test_switch#continue_scope#169811.951014941dc480b6_1" [label="1: Start continue_scope::test_switch\nFormals:  a:_Bool k:int\nLocals:  x3:continue_scope::X x2:continue_scope::X x1:continue_scope::X \n  " color=yellow style=filled]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_1" -> "test_switch#continue_scope#169811.951014941dc480b6_14" ;
+"test_switch#continue_scope#169811.951014941dc480b6_2" [label="2: Exit continue_scope::test_switch \n  " color=yellow style=filled]
+	
+
+"test_switch#continue_scope#169811.951014941dc480b6_3" [label="3:  Destruction(Scope) \n   _=*&x1:continue_scope::X [line 126, column 1]\n  n$1=_fun_continue_scope::X::~X(&x1:continue_scope::X*) injected [line 126, column 1]\n " shape="box"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_3" -> "test_switch#continue_scope#169811.951014941dc480b6_2" ;
+"test_switch#continue_scope#169811.951014941dc480b6_4" [label="4: + \n  " ]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_4" -> "test_switch#continue_scope#169811.951014941dc480b6_5" ;
+	 "test_switch#continue_scope#169811.951014941dc480b6_4" -> "test_switch#continue_scope#169811.951014941dc480b6_6" ;
+"test_switch#continue_scope#169811.951014941dc480b6_5" [label="5: Prune (true branch, while) \n   n$3=*&a:_Bool [line 115, column 10]\n  PRUNE(n$3, true); [line 115, column 10]\n " shape="invhouse"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_5" -> "test_switch#continue_scope#169811.951014941dc480b6_13" ;
+"test_switch#continue_scope#169811.951014941dc480b6_6" [label="6: Prune (false branch, while) \n   n$3=*&a:_Bool [line 115, column 10]\n  PRUNE(!n$3, false); [line 115, column 10]\n " shape="invhouse"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_6" -> "test_switch#continue_scope#169811.951014941dc480b6_3" ;
+"test_switch#continue_scope#169811.951014941dc480b6_7" [label="7:  Destruction(Scope) \n   _=*&x2:continue_scope::X [line 125, column 3]\n  n$5=_fun_continue_scope::X::~X(&x2:continue_scope::X*) injected [line 125, column 3]\n " shape="box"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_7" -> "test_switch#continue_scope#169811.951014941dc480b6_4" ;
+"test_switch#continue_scope#169811.951014941dc480b6_8" [label="8:  SwitchStmt \n   n$7=*&k:int [line 117, column 13]\n " shape="box"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_8" -> "test_switch#continue_scope#169811.951014941dc480b6_11" ;
+	 "test_switch#continue_scope#169811.951014941dc480b6_8" -> "test_switch#continue_scope#169811.951014941dc480b6_12" ;
+"test_switch#continue_scope#169811.951014941dc480b6_9" [label="9:  Destruction(continue) \n   _=*&x3:continue_scope::X [line 120, column 9]\n  n$10=_fun_continue_scope::X::~X(&x3:continue_scope::X*) injected [line 120, column 9]\n  _=*&x2:continue_scope::X [line 120, column 9]\n  n$12=_fun_continue_scope::X::~X(&x2:continue_scope::X*) injected [line 120, column 9]\n " shape="box"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_9" -> "test_switch#continue_scope#169811.951014941dc480b6_4" ;
+"test_switch#continue_scope#169811.951014941dc480b6_10" [label="10:  DeclStmt \n   VARIABLE_DECLARED(x3:continue_scope::X); [line 119, column 9]\n  n$14=_fun_continue_scope::X::X(&x3:continue_scope::X*) [line 119, column 11]\n " shape="box"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_10" -> "test_switch#continue_scope#169811.951014941dc480b6_9" ;
+"test_switch#continue_scope#169811.951014941dc480b6_11" [label="11: Prune (true branch, switch) \n   PRUNE((n$7 == 0), true); [line 118, column 7]\n " shape="invhouse"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_11" -> "test_switch#continue_scope#169811.951014941dc480b6_10" ;
+"test_switch#continue_scope#169811.951014941dc480b6_12" [label="12: Prune (false branch, switch) \n   PRUNE(!(n$7 == 0), false); [line 118, column 7]\n " shape="invhouse"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_12" -> "test_switch#continue_scope#169811.951014941dc480b6_7" ;
+"test_switch#continue_scope#169811.951014941dc480b6_13" [label="13:  DeclStmt \n   VARIABLE_DECLARED(x2:continue_scope::X); [line 116, column 5]\n  n$16=_fun_continue_scope::X::X(&x2:continue_scope::X*) [line 116, column 7]\n " shape="box"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_13" -> "test_switch#continue_scope#169811.951014941dc480b6_8" ;
+"test_switch#continue_scope#169811.951014941dc480b6_14" [label="14:  DeclStmt \n   VARIABLE_DECLARED(x1:continue_scope::X); [line 114, column 3]\n  n$18=_fun_continue_scope::X::X(&x1:continue_scope::X*) [line 114, column 5]\n " shape="box"]
+	
+
+	 "test_switch#continue_scope#169811.951014941dc480b6_14" -> "test_switch#continue_scope#169811.951014941dc480b6_4" ;
 "test_while1#continue_scope#754087.b81085ce953e1cd4_1" [label="1: Start continue_scope::test_while1\nFormals:  a:_Bool b:_Bool\nLocals:  x2:continue_scope::X x4:continue_scope::X x1:continue_scope::X \n  " color=yellow style=filled]
 	
 
