@@ -29,28 +29,28 @@ let type_desc_of_builtin_type_kind builtin_type_kind =
       Typ.Tint IBool
   | `Char_U ->
       Typ.Tint IUChar
-  | `UChar ->
-      Typ.Tint IUChar
-  | `WChar_U ->
+  | `UChar | `Char8 ->
       Typ.Tint IUChar
   | `Char_S ->
       Typ.Tint IChar
   | `SChar ->
       Typ.Tint ISChar
-  | `WChar_S | `Char16 | `Char32 ->
-      Typ.Tint IChar
-  | `UShort ->
+  | `UShort | `Char16 ->
       Typ.Tint IUShort
   | `Short ->
       Typ.Tint IShort
-  | `UInt | `UInt128 ->
+  | `UInt | `WChar_U | `Char32 ->
       Typ.Tint IUInt
+  | `UInt128 ->
+      Typ.Tint IU128
   | `ULong ->
       Typ.Tint IULong
   | `ULongLong ->
       Typ.Tint IULongLong
-  | `Int | `Int128 ->
+  | `Int | `WChar_S ->
       Typ.Tint IInt
+  | `Int128 ->
+      Typ.Tint I128
   | `Long ->
       Typ.Tint ILong
   | `LongLong ->

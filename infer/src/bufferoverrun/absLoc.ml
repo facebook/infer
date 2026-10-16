@@ -610,6 +610,8 @@ module PowLoc = struct
 
   let of_c_strlen x = map Loc.of_c_strlen x
 
+  let remove_unknown x = fold (fun l acc -> if Loc.is_unknown l then acc else add l acc) x bot
+
   let cast typ x = map (Loc.cast typ) x
 
   let to_set = function Bottom -> LocSet.empty | Unknown ploc | Known ploc -> ploc
