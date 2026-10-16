@@ -104,6 +104,13 @@
           "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["SessionAttribute"] }
       ]
+    },
+    { "short_description": "XML External Entity Injection",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "Intent", "UserControlledString", "UserControlledURI"],
+          "sanitizer_kinds": ["Sanitizer"],
+          "sink_kinds": ["XMLParsing"] }
+      ]
     }
   ],
   "pulse-taint-sources": [
@@ -444,6 +451,32 @@
     { "class_names": ["javax.servlet.http.HttpSession", "jakarta.servlet.http.HttpSession"],
       "method_names": ["putValue", "setAttribute"],
       "kinds": ["SessionAttribute"]
+    },
+    { "class_names": ["javax.xml.parsers.DocumentBuilder", "javax.xml.parsers.SAXParser", "org.xml.sax.XMLReader"],
+      "method_names": ["parse"],
+      "kinds": ["XMLParsing"]
+    },
+    { "class_names": ["javax.xml.stream.XMLInputFactory"],
+      "method_names": ["createXMLEventReader", "createXMLStreamReader"],
+      "kinds": ["XMLParsing"],
+      "taint_target": ["ArgumentsMatchingTypes", ["java.io.InputStream", "java.io.Reader", "javax.xml.transform.Source"]]
+    },
+    { "class_names": ["javax.xml.xpath.XPath", "javax.xml.xpath.XPathExpression"],
+      "method_names": ["evaluate", "evaluateExpression"],
+      "kinds": ["XMLParsing"],
+      "taint_target": ["ArgumentsMatchingTypes", ["org.xml.sax.InputSource"]]
+    },
+    { "class_names": ["javax.xml.bind.Unmarshaller", "jakarta.xml.bind.Unmarshaller"],
+      "method_names": ["unmarshal"],
+      "kinds": ["XMLParsing"]
+    },
+    { "class_names": ["org.jdom.input.SAXBuilder", "org.jdom2.input.SAXBuilder"],
+      "method_names": ["build"],
+      "kinds": ["XMLParsing"]
+    },
+    { "class_names": ["org.simpleframework.xml.core.Persister"],
+      "method_names": ["read"],
+      "kinds": ["XMLParsing"]
     },
     { "class_names": ["java.sql.Statement"],
       "method_names": ["addBatch", "execute", "executeQuery", "executeUpdate", "executeLargeUpdate"],

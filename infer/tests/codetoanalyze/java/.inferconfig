@@ -162,7 +162,11 @@
       "taint_target": ["ArgumentPositions", [0]]
     },
     { "class_names": ["codetoanalyze.java.pulse.Validators"],
-      "method_names": ["requireAllowedHost", "requireAlphanumeric", "requireFileName"],
+      "method_names": ["requireAllowedHost", "requireAlphanumeric", "requireFileName", "requireNoDoctype"],
+      "kinds": ["Sanitizer"]
+    },
+    { "class_names": ["codetoanalyze.java.pulse.XmlExternalEntityInjection"],
+      "method_names": ["parseWithoutDoctype"],
       "kinds": ["Sanitizer"]
     }
   ]
