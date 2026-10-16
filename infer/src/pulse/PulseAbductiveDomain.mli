@@ -530,7 +530,9 @@ module Summary : sig
   val pre_heap_has_assumptions : summary -> bool
   (** whether the pre heap encodes some assumptions about values: either a value is restricted (>=
       0) or there is sharing in the heap. Both represent implicit assumptions that the program must
-      have made. *)
+      have made. Sharing of a value that a condition makes equal to a constant is not an assumption:
+      the cells are equal to the same constant, and summary creation makes the conditions on that
+      value as latent as the conditions on each of the cells. *)
 
   val unsafe_from_join : t -> summary
 

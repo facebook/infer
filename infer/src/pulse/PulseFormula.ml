@@ -1187,6 +1187,33 @@ let as_constant_string formula v =
       None
 
 
+let get_constant_condition_depth formula v =
+  let is_linear (t : Term.t) =
+    match t with Const _ | String _ | Var _ | Linear _ -> true | _ -> false
+  in
+  Atom.Map.fold
+    (fun atom depth depth_opt ->
+      match (atom : Atom.t) with
+      | Equal (t1, t2)
+        when is_linear t1 && is_linear t2
+             && Var.Set.equal
+                  (Atom.fold_variables atom ~init:Var.Set.empty ~f:(Fn.flip Var.Set.add))
+                  (Var.Set.singleton v) ->
+          Some (Option.value_map depth_opt ~default:depth ~f:(Int.min depth))
+      | _ ->
+          depth_opt )
+    formula.conditions None
+
+
+let raise_depth_of_conditions_on v ~depth formula =
+  let mentions_v atom = Atom.fold_variables atom ~init:false ~f:(fun b v' -> b || Var.equal v v') in
+  { formula with
+    conditions=
+      Atom.Map.mapi
+        (fun atom depth' -> if mentions_v atom then Int.max depth depth' else depth')
+        formula.conditions }
+
+
 (** for use in applying callee path conditions: we need to translate callee variables to make sense
     for the caller, thereby possibly extending the current substitution *)
 let subst_find_or_new ~default subst addr_callee =
