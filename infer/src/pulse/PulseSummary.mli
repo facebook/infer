@@ -14,7 +14,12 @@ type pre_post_list = ExecutionDomain.summary list [@@deriving yojson_of]
 type summary = {pre_post_list: pre_post_list; non_disj: NonDisjDomain.Summary.t}
 [@@deriving yojson_of]
 
-type t = {main: summary; specialized: summary Specialization.Pulse.Map.t} [@@deriving yojson_of]
+type t =
+  { main: summary
+  ; specialized: summary Specialization.Pulse.Map.t
+  ; failed: string Specialization.Pulse.Map.t
+        (** specializations whose analysis timed out, with the run that recorded the failure *) }
+[@@deriving yojson_of]
 
 val of_posts :
      t InterproceduralAnalysis.t
@@ -52,5 +57,14 @@ val initial_with_positive_self : ProcAttributes.t -> AbductiveDomain.t -> Abduct
 
 val mk_objc_nil_messaging_summary : Tenv.t -> ProcAttributes.t -> ExecutionDomain.summary option
 
+val add_failed : Specialization.Pulse.t -> t -> t
+(** record that the analysis of the specialization timed out in the current run *)
+
+val is_failed : Specialization.Pulse.t -> t -> bool
+(** whether the analysis of the specialization timed out in the current run; failures recorded by
+    earlier runs, e.g. before an [--incremental-analysis] run, are ignored so that the
+    specialization is analyzed again *)
+
 val merge : t -> t -> t
-(** Merge specialized summaries. *)
+(** Merge specialized summaries. Specialized summaries take precedence over failures, and failures
+    recorded by earlier runs are dropped. *)

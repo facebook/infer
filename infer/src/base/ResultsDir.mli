@@ -10,6 +10,9 @@ open! IStd
 module RunState : sig
   val add_run_to_sequence : unit -> unit
   (** add an entry with the current run date *)
+
+  val current_run : unit -> string
+  (** the date of the current run, also in its worker processes *)
 end
 
 val get_path : ResultsDirEntryName.id -> string

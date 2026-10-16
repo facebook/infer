@@ -70,6 +70,10 @@ module RunState = struct
     state := {!state with Runstate_t.run_sequence= run :: !state.run_sequence} ;
     (* store change to the runstate *)
     store ()
+
+
+  let current_run () =
+    match !state.Runstate_t.run_sequence with {date} :: _ -> date | [] -> run_time_string
 end
 
 let is_results_dir () =

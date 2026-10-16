@@ -7,6 +7,7 @@
 
 open! IStd
 module L = Logging
+module F = Format
 
 type proc_callback_args = {summary: Summary.t; proc_desc: Procdesc.t}
 
@@ -23,7 +24,8 @@ type procedure_callback =
   ; dynamic_dispatch: bool
   ; language: Language.t
   ; callback: proc_callback_with_specialization_t
-  ; is_already_specialized: Specialization.t -> Summary.t -> bool }
+  ; is_already_specialized: Specialization.t -> Summary.t -> bool
+  ; mark_specialization_failed: Specialization.t -> Summary.t -> Summary.t }
 
 type file_callback = {checker: Checker.t; language: Language.t; callback: file_callback_t}
 
@@ -37,15 +39,27 @@ let register_procedure_callback checker ?(dynamic_dispatch = false) language
     if Option.is_some specialization then summary else callback arg
   in
   let is_already_specialized _ _ = true in
+  let mark_specialization_failed _ summary = summary in
   procedure_callbacks_rev :=
-    {checker; dynamic_dispatch; language; callback; is_already_specialized}
+    { checker
+    ; dynamic_dispatch
+    ; language
+    ; callback
+    ; is_already_specialized
+    ; mark_specialization_failed }
     :: !procedure_callbacks_rev
 
 
 let register_procedure_callback_with_specialization checker ?(dynamic_dispatch = false) language
-    (callback : proc_callback_with_specialization_t) ~is_already_specialized =
+    (callback : proc_callback_with_specialization_t) ~is_already_specialized
+    ~mark_specialization_failed =
   procedure_callbacks_rev :=
-    {checker; dynamic_dispatch; language; callback; is_already_specialized}
+    { checker
+    ; dynamic_dispatch
+    ; language
+    ; callback
+    ; is_already_specialized
+    ; mark_specialization_failed }
     :: !procedure_callbacks_rev
 
 
@@ -71,8 +85,11 @@ let iterate_procedure_callbacks analysis_req ?specialization ({Summary.proc_name
     | CheckerWithoutPayload LoopHoisting ->
         is_dependency_of LoopHoisting
   in
+  let pp_specialization fmt =
+    Option.iter specialization ~f:(F.fprintf fmt " (specialization %a)" Specialization.pp)
+  in
   List.fold_right ~init:summary !procedure_callbacks_rev
-    ~f:(fun {checker; dynamic_dispatch; language; callback} summary ->
+    ~f:(fun {checker; dynamic_dispatch; language; callback; mark_specialization_failed} summary ->
       if
         Language.equal language procedure_language
         && (dynamic_dispatch || not is_specialized)
@@ -87,10 +104,12 @@ let iterate_procedure_callbacks analysis_req ?specialization ({Summary.proc_name
           Timer.time (Checker checker)
             ~f:(fun () -> callback ?specialization {summary; proc_desc})
             ~on_timeout:(fun span ->
-              L.debug Analysis Quiet "TIMEOUT in %s after %fs of CPU time analyzing %a:%a@\n"
+              L.debug Analysis Quiet "TIMEOUT in %s after %fs of CPU time analyzing %a:%a%t@\n"
                 (Checker.get_id checker) span SourceFile.pp
-                (Procdesc.get_attributes proc_desc).translation_unit Procname.pp proc_name ;
-              summary )
+                (Procdesc.get_attributes proc_desc).translation_unit Procname.pp proc_name
+                pp_specialization ;
+              Option.value_map specialization ~default:summary ~f:(fun specialization ->
+                  mark_specialization_failed specialization summary ) )
         in
         PerfEvent.(log (fun logger -> log_end_event logger ())) ;
         summary )
