@@ -89,11 +89,11 @@ digraph cfg {
 "using_div0#15267107907897398237.0f32134dc9668df5_2" [label="2: Exit using_div0 \n  " color=yellow style=filled]
 	
 
-"using_div0#15267107907897398237.0f32134dc9668df5_3" [label="3:  Return Stmt \n   n$1=_fun_f3::C::ret_zero() [line 33, column 14]\n " shape="box"]
+"using_div0#15267107907897398237.0f32134dc9668df5_3" [label="3:  Return Stmt \n   n$0=_fun_f3::C::ret_zero() [line 33, column 14]\n " shape="box"]
 	
 
 	 "using_div0#15267107907897398237.0f32134dc9668df5_3" -> "using_div0#15267107907897398237.0f32134dc9668df5_4" ;
-"using_div0#15267107907897398237.0f32134dc9668df5_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$1) [line 33, column 3]\n " shape="box"]
+"using_div0#15267107907897398237.0f32134dc9668df5_4" [label="4:  Return Stmt \n   *&return:int=(1 / n$0) [line 33, column 3]\n " shape="box"]
 	
 
 	 "using_div0#15267107907897398237.0f32134dc9668df5_4" -> "using_div0#15267107907897398237.0f32134dc9668df5_2" ;

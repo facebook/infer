@@ -29,6 +29,17 @@ val get_thread_assert_effect : Procname.t -> thread
 (** In Java, certain methods can be used to assert execution on a specific kind of thread, or return
     a boolean equivalent to such a fact. *)
 
+val get_thread_start_routine :
+     get_callable:(HilExp.AccessExpression.t -> Procname.t option)
+  -> Procname.t
+  -> HilExp.t list
+  -> Procname.t option
+(** If a call to the procedure with the given actuals starts a new thread ([pthread_create], the
+    constructors of [std::thread] and [std::jthread], [emplace_back] on a container of them,
+    [std::async] without an explicit [std::launch::deferred] policy), return the procedure that the
+    new thread runs when it is known, that is, when the corresponding actual is a function, a
+    lambda, or an access expression holding one according to [get_callable]. *)
+
 val get_current_class_and_annotated_superclasses :
   (Annot.Item.t -> bool) -> Tenv.t -> Procname.t -> (Typ.name * Typ.name list) option
 

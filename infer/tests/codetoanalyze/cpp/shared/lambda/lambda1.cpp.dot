@@ -1,21 +1,21 @@
 /* @generated */
 digraph cfg {
-"bar#13629960763458822780.27859d4aca4c920a_1" [label="1: Start bar\nFormals: \nLocals:  func:lambda_lambda1.cpp:9_47763053 0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:9_47763053 \n  " color=yellow style=filled]
+"bar#13629960763458822780.27859d4aca4c920a_1" [label="1: Start bar\nFormals: \nLocals:  func:lambda_lambda1.cpp:9_47763053 0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:9_47763053 \n  " color=yellow style=filled]
 	
 
 	 "bar#13629960763458822780.27859d4aca4c920a_1" -> "bar#13629960763458822780.27859d4aca4c920a_6" ;
 "bar#13629960763458822780.27859d4aca4c920a_2" [label="2: Exit bar \n  " color=yellow style=filled]
 	
 
-"bar#13629960763458822780.27859d4aca4c920a_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_lambda1.cpp:9_47763053::operator()(&func:lambda_lambda1.cpp:9_47763053&) [line 13, column 14]\n " shape="box"]
+"bar#13629960763458822780.27859d4aca4c920a_3" [label="3:  Return Stmt \n   n$0=_fun_lambda_lambda1.cpp:9_47763053::operator()(&func:lambda_lambda1.cpp:9_47763053&) [line 13, column 14]\n " shape="box"]
 	
 
 	 "bar#13629960763458822780.27859d4aca4c920a_3" -> "bar#13629960763458822780.27859d4aca4c920a_4" ;
-"bar#13629960763458822780.27859d4aca4c920a_4" [label="4:  Return Stmt \n   *&return:int=(7 / n$1) [line 13, column 3]\n " shape="box"]
+"bar#13629960763458822780.27859d4aca4c920a_4" [label="4:  Return Stmt \n   *&return:int=(7 / n$0) [line 13, column 3]\n " shape="box"]
 	
 
 	 "bar#13629960763458822780.27859d4aca4c920a_4" -> "bar#13629960763458822780.27859d4aca4c920a_2" ;
-"bar#13629960763458822780.27859d4aca4c920a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:9_47763053); [line 9, column 15]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:9_47763053=(_fun_lambda_lambda1.cpp:9_47763053::operator()) [line 9, column 15]\n " shape="box"]
+"bar#13629960763458822780.27859d4aca4c920a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:9_47763053); [line 9, column 15]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:9_47763053=(_fun_lambda_lambda1.cpp:9_47763053::operator()) [line 9, column 15]\n " shape="box"]
 	
 
 	 "bar#13629960763458822780.27859d4aca4c920a_5" -> "bar#13629960763458822780.27859d4aca4c920a_7" ;
@@ -23,7 +23,7 @@ digraph cfg {
 	
 
 	 "bar#13629960763458822780.27859d4aca4c920a_6" -> "bar#13629960763458822780.27859d4aca4c920a_5" ;
-"bar#13629960763458822780.27859d4aca4c920a_7" [label="7:  DeclStmt \n   n$3=_fun_lambda_lambda1.cpp:9_47763053::lambda_lambda1.cpp:9_6a46cf42(&func:lambda_lambda1.cpp:9_47763053*,&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:9_47763053&) [line 9, column 15]\n " shape="box"]
+"bar#13629960763458822780.27859d4aca4c920a_7" [label="7:  DeclStmt \n   n$2=_fun_lambda_lambda1.cpp:9_47763053::lambda_lambda1.cpp:9_6a46cf42(&func:lambda_lambda1.cpp:9_47763053*,&0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:9_47763053&) [line 9, column 15]\n " shape="box"]
 	
 
 	 "bar#13629960763458822780.27859d4aca4c920a_7" -> "bar#13629960763458822780.27859d4aca4c920a_3" ;
@@ -46,7 +46,7 @@ digraph cfg {
 	
 
 	 "capture_by_ref#437560124929606904.1d794578c048d96b_5" -> "capture_by_ref#437560124929606904.1d794578c048d96b_6" ;
-"capture_by_ref#437560124929606904.1d794578c048d96b_6" [label="6:  Compound statement \n   n$3=_fun_lambda_lambda1.cpp:36_ac60becc::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:36_ac60becc&) [line 36, column 3]\n " shape="box"]
+"capture_by_ref#437560124929606904.1d794578c048d96b_6" [label="6:  Compound statement \n   n$2=_fun_lambda_lambda1.cpp:36_ac60becc::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:36_ac60becc&) [line 36, column 3]\n " shape="box"]
 	
 
 	 "capture_by_ref#437560124929606904.1d794578c048d96b_6" -> "capture_by_ref#437560124929606904.1d794578c048d96b_3" ;
@@ -54,22 +54,22 @@ digraph cfg {
 	
 
 	 "capture_by_ref#437560124929606904.1d794578c048d96b_7" -> "capture_by_ref#437560124929606904.1d794578c048d96b_5" ;
-"foo#972162870672026475.86d7db357d6a3608_1" [label="1: Start foo\nFormals: \nLocals:  y:lambda_lambda1.cpp:18_a7671274 0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:18_a7671274 unused:lambda_lambda1.cpp:17_395d4b06 0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:17_395d4b06 \n  " color=yellow style=filled]
+"foo#972162870672026475.86d7db357d6a3608_1" [label="1: Start foo\nFormals: \nLocals:  y:lambda_lambda1.cpp:18_a7671274 0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:18_a7671274 unused:lambda_lambda1.cpp:17_395d4b06 0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:17_395d4b06 \n  " color=yellow style=filled]
 	
 
 	 "foo#972162870672026475.86d7db357d6a3608_1" -> "foo#972162870672026475.86d7db357d6a3608_9" ;
 "foo#972162870672026475.86d7db357d6a3608_2" [label="2: Exit foo \n  " color=yellow style=filled]
 	
 
-"foo#972162870672026475.86d7db357d6a3608_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_lambda1.cpp:18_a7671274::operator()(&y:lambda_lambda1.cpp:18_a7671274&,3:int) [line 19, column 19]\n " shape="box"]
+"foo#972162870672026475.86d7db357d6a3608_3" [label="3:  Return Stmt \n   n$0=_fun_lambda_lambda1.cpp:18_a7671274::operator()(&y:lambda_lambda1.cpp:18_a7671274&,3:int) [line 19, column 19]\n " shape="box"]
 	
 
 	 "foo#972162870672026475.86d7db357d6a3608_3" -> "foo#972162870672026475.86d7db357d6a3608_4" ;
-"foo#972162870672026475.86d7db357d6a3608_4" [label="4:  Return Stmt \n   *&return:int=(5 / (4 - n$1)) [line 19, column 3]\n " shape="box"]
+"foo#972162870672026475.86d7db357d6a3608_4" [label="4:  Return Stmt \n   *&return:int=(5 / (4 - n$0)) [line 19, column 3]\n " shape="box"]
 	
 
 	 "foo#972162870672026475.86d7db357d6a3608_4" -> "foo#972162870672026475.86d7db357d6a3608_2" ;
-"foo#972162870672026475.86d7db357d6a3608_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:18_a7671274); [line 18, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:18_a7671274=(_fun_lambda_lambda1.cpp:18_a7671274::operator()) [line 18, column 12]\n " shape="box"]
+"foo#972162870672026475.86d7db357d6a3608_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:18_a7671274); [line 18, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:18_a7671274=(_fun_lambda_lambda1.cpp:18_a7671274::operator()) [line 18, column 12]\n " shape="box"]
 	
 
 	 "foo#972162870672026475.86d7db357d6a3608_5" -> "foo#972162870672026475.86d7db357d6a3608_7" ;
@@ -77,11 +77,11 @@ digraph cfg {
 	
 
 	 "foo#972162870672026475.86d7db357d6a3608_6" -> "foo#972162870672026475.86d7db357d6a3608_5" ;
-"foo#972162870672026475.86d7db357d6a3608_7" [label="7:  DeclStmt \n   n$3=_fun_lambda_lambda1.cpp:18_a7671274::lambda_lambda1.cpp:18_1786f9a1(&y:lambda_lambda1.cpp:18_a7671274*,&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:18_a7671274&) [line 18, column 12]\n " shape="box"]
+"foo#972162870672026475.86d7db357d6a3608_7" [label="7:  DeclStmt \n   n$2=_fun_lambda_lambda1.cpp:18_a7671274::lambda_lambda1.cpp:18_1786f9a1(&y:lambda_lambda1.cpp:18_a7671274*,&0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:18_a7671274&) [line 18, column 12]\n " shape="box"]
 	
 
 	 "foo#972162870672026475.86d7db357d6a3608_7" -> "foo#972162870672026475.86d7db357d6a3608_3" ;
-"foo#972162870672026475.86d7db357d6a3608_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:17_395d4b06); [line 17, column 17]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:17_395d4b06=(_fun_lambda_lambda1.cpp:17_395d4b06::operator()) [line 17, column 17]\n " shape="box"]
+"foo#972162870672026475.86d7db357d6a3608_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:17_395d4b06); [line 17, column 17]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:17_395d4b06=(_fun_lambda_lambda1.cpp:17_395d4b06::operator()) [line 17, column 17]\n " shape="box"]
 	
 
 	 "foo#972162870672026475.86d7db357d6a3608_8" -> "foo#972162870672026475.86d7db357d6a3608_10" ;
@@ -89,26 +89,26 @@ digraph cfg {
 	
 
 	 "foo#972162870672026475.86d7db357d6a3608_9" -> "foo#972162870672026475.86d7db357d6a3608_8" ;
-"foo#972162870672026475.86d7db357d6a3608_10" [label="10:  DeclStmt \n   n$5=_fun_lambda_lambda1.cpp:17_395d4b06::lambda_lambda1.cpp:17_d1fc440e(&unused:lambda_lambda1.cpp:17_395d4b06*,&0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:17_395d4b06&) [line 17, column 17]\n " shape="box"]
+"foo#972162870672026475.86d7db357d6a3608_10" [label="10:  DeclStmt \n   n$4=_fun_lambda_lambda1.cpp:17_395d4b06::lambda_lambda1.cpp:17_d1fc440e(&unused:lambda_lambda1.cpp:17_395d4b06*,&0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:17_395d4b06&) [line 17, column 17]\n " shape="box"]
 	
 
 	 "foo#972162870672026475.86d7db357d6a3608_10" -> "foo#972162870672026475.86d7db357d6a3608_6" ;
-"fooOK#5521302935427608539.9c36ec052efdd509_1" [label="1: Start fooOK\nFormals: \nLocals:  y:lambda_lambda1.cpp:24_d1db7639 0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:24_d1db7639 \n  " color=yellow style=filled]
+"fooOK#5521302935427608539.9c36ec052efdd509_1" [label="1: Start fooOK\nFormals: \nLocals:  y:lambda_lambda1.cpp:24_d1db7639 0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:24_d1db7639 \n  " color=yellow style=filled]
 	
 
 	 "fooOK#5521302935427608539.9c36ec052efdd509_1" -> "fooOK#5521302935427608539.9c36ec052efdd509_6" ;
 "fooOK#5521302935427608539.9c36ec052efdd509_2" [label="2: Exit fooOK \n  " color=yellow style=filled]
 	
 
-"fooOK#5521302935427608539.9c36ec052efdd509_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_lambda1.cpp:24_d1db7639::operator()(&y:lambda_lambda1.cpp:24_d1db7639&,3:int) [line 25, column 19]\n " shape="box"]
+"fooOK#5521302935427608539.9c36ec052efdd509_3" [label="3:  Return Stmt \n   n$0=_fun_lambda_lambda1.cpp:24_d1db7639::operator()(&y:lambda_lambda1.cpp:24_d1db7639&,3:int) [line 25, column 19]\n " shape="box"]
 	
 
 	 "fooOK#5521302935427608539.9c36ec052efdd509_3" -> "fooOK#5521302935427608539.9c36ec052efdd509_4" ;
-"fooOK#5521302935427608539.9c36ec052efdd509_4" [label="4:  Return Stmt \n   *&return:int=(5 / (4 - n$1)) [line 25, column 3]\n " shape="box"]
+"fooOK#5521302935427608539.9c36ec052efdd509_4" [label="4:  Return Stmt \n   *&return:int=(5 / (4 - n$0)) [line 25, column 3]\n " shape="box"]
 	
 
 	 "fooOK#5521302935427608539.9c36ec052efdd509_4" -> "fooOK#5521302935427608539.9c36ec052efdd509_2" ;
-"fooOK#5521302935427608539.9c36ec052efdd509_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:24_d1db7639); [line 24, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:24_d1db7639=(_fun_lambda_lambda1.cpp:24_d1db7639::operator()) [line 24, column 12]\n " shape="box"]
+"fooOK#5521302935427608539.9c36ec052efdd509_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:24_d1db7639); [line 24, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:24_d1db7639=(_fun_lambda_lambda1.cpp:24_d1db7639::operator()) [line 24, column 12]\n " shape="box"]
 	
 
 	 "fooOK#5521302935427608539.9c36ec052efdd509_5" -> "fooOK#5521302935427608539.9c36ec052efdd509_7" ;
@@ -116,7 +116,7 @@ digraph cfg {
 	
 
 	 "fooOK#5521302935427608539.9c36ec052efdd509_6" -> "fooOK#5521302935427608539.9c36ec052efdd509_5" ;
-"fooOK#5521302935427608539.9c36ec052efdd509_7" [label="7:  DeclStmt \n   n$3=_fun_lambda_lambda1.cpp:24_d1db7639::lambda_lambda1.cpp:24_01460d9a(&y:lambda_lambda1.cpp:24_d1db7639*,&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:24_d1db7639&) [line 24, column 12]\n " shape="box"]
+"fooOK#5521302935427608539.9c36ec052efdd509_7" [label="7:  DeclStmt \n   n$2=_fun_lambda_lambda1.cpp:24_d1db7639::lambda_lambda1.cpp:24_01460d9a(&y:lambda_lambda1.cpp:24_d1db7639*,&0$?%__sil_tmpSIL_materialize_temp__n$1:lambda_lambda1.cpp:24_d1db7639&) [line 24, column 12]\n " shape="box"]
 	
 
 	 "fooOK#5521302935427608539.9c36ec052efdd509_7" -> "fooOK#5521302935427608539.9c36ec052efdd509_3" ;
@@ -135,15 +135,15 @@ digraph cfg {
 	
 
 	 "init_capture1#1158298567562796256.58b9ce334267f411_4" -> "init_capture1#1158298567562796256.58b9ce334267f411_3" ;
-"init_capture1#1158298567562796256.58b9ce334267f411_5" [label="5:  DeclStmt \n   n$2=*&i:int [line 41, column 10]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:41_c382da63=(_fun_lambda_lambda1.cpp:41_c382da63::operator(),([by value]n$2 &i:int)) [line 41, column 10]\n " shape="box"]
+"init_capture1#1158298567562796256.58b9ce334267f411_5" [label="5:  DeclStmt \n   n$1=*&i:int [line 41, column 10]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:41_c382da63=(_fun_lambda_lambda1.cpp:41_c382da63::operator(),([by value]n$1 &i:int)) [line 41, column 10]\n " shape="box"]
 	
 
 	 "init_capture1#1158298567562796256.58b9ce334267f411_5" -> "init_capture1#1158298567562796256.58b9ce334267f411_6" ;
-"init_capture1#1158298567562796256.58b9ce334267f411_6" [label="6:  Return Stmt \n   n$3=_fun_lambda_lambda1.cpp:41_c382da63::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:41_c382da63&) [line 41, column 10]\n " shape="box"]
+"init_capture1#1158298567562796256.58b9ce334267f411_6" [label="6:  Return Stmt \n   n$2=_fun_lambda_lambda1.cpp:41_c382da63::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:41_c382da63&) [line 41, column 10]\n " shape="box"]
 	
 
 	 "init_capture1#1158298567562796256.58b9ce334267f411_6" -> "init_capture1#1158298567562796256.58b9ce334267f411_7" ;
-"init_capture1#1158298567562796256.58b9ce334267f411_7" [label="7:  Return Stmt \n   *&return:int=n$3 [line 41, column 3]\n " shape="box"]
+"init_capture1#1158298567562796256.58b9ce334267f411_7" [label="7:  Return Stmt \n   *&return:int=n$2 [line 41, column 3]\n " shape="box"]
 	
 
 	 "init_capture1#1158298567562796256.58b9ce334267f411_7" -> "init_capture1#1158298567562796256.58b9ce334267f411_2" ;
@@ -162,7 +162,7 @@ digraph cfg {
 	
 
 	 "init_capture2#1158214344972094216.039b5039af3b7807_4" -> "init_capture2#1158214344972094216.039b5039af3b7807_3" ;
-"init_capture2#1158214344972094216.039b5039af3b7807_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 46, column 10]\n  n$4=*&i:int [line 46, column 15]\n  *&a:int=n$4 [line 46, column 10]\n " shape="box"]
+"init_capture2#1158214344972094216.039b5039af3b7807_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(a:int); [line 46, column 10]\n  n$3=*&i:int [line 46, column 15]\n  *&a:int=n$3 [line 46, column 10]\n " shape="box"]
 	
 
 	 "init_capture2#1158214344972094216.039b5039af3b7807_5" -> "init_capture2#1158214344972094216.039b5039af3b7807_4" ;
@@ -170,15 +170,15 @@ digraph cfg {
 	
 
 	 "init_capture2#1158214344972094216.039b5039af3b7807_6" -> "init_capture2#1158214344972094216.039b5039af3b7807_5" ;
-"init_capture2#1158214344972094216.039b5039af3b7807_7" [label="7:  DeclStmt \n   n$5=*&a:int [line 46, column 10]\n  n$3=*&b:int [line 46, column 10]\n  n$2=*&c:int [line 46, column 10]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:46_5c3eddeb=(_fun_lambda_lambda1.cpp:46_5c3eddeb::operator(),([by value]n$5 &a:int),([by value]n$3 &b:int),([by value]n$2 &c:int)) [line 46, column 10]\n " shape="box"]
+"init_capture2#1158214344972094216.039b5039af3b7807_7" [label="7:  DeclStmt \n   n$4=*&a:int [line 46, column 10]\n  n$2=*&b:int [line 46, column 10]\n  n$1=*&c:int [line 46, column 10]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:46_5c3eddeb=(_fun_lambda_lambda1.cpp:46_5c3eddeb::operator(),([by value]n$4 &a:int),([by value]n$2 &b:int),([by value]n$1 &c:int)) [line 46, column 10]\n " shape="box"]
 	
 
 	 "init_capture2#1158214344972094216.039b5039af3b7807_7" -> "init_capture2#1158214344972094216.039b5039af3b7807_8" ;
-"init_capture2#1158214344972094216.039b5039af3b7807_8" [label="8:  Return Stmt \n   n$6=_fun_lambda_lambda1.cpp:46_5c3eddeb::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:46_5c3eddeb&) [line 46, column 10]\n " shape="box"]
+"init_capture2#1158214344972094216.039b5039af3b7807_8" [label="8:  Return Stmt \n   n$5=_fun_lambda_lambda1.cpp:46_5c3eddeb::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:46_5c3eddeb&) [line 46, column 10]\n " shape="box"]
 	
 
 	 "init_capture2#1158214344972094216.039b5039af3b7807_8" -> "init_capture2#1158214344972094216.039b5039af3b7807_9" ;
-"init_capture2#1158214344972094216.039b5039af3b7807_9" [label="9:  Return Stmt \n   *&return:int=n$6 [line 46, column 3]\n " shape="box"]
+"init_capture2#1158214344972094216.039b5039af3b7807_9" [label="9:  Return Stmt \n   *&return:int=n$5 [line 46, column 3]\n " shape="box"]
 	
 
 	 "init_capture2#1158214344972094216.039b5039af3b7807_9" -> "init_capture2#1158214344972094216.039b5039af3b7807_2" ;
@@ -193,15 +193,15 @@ digraph cfg {
 "normal_capture#553302976425431985.11493b249dddd657_2" [label="2: Exit normal_capture \n  " color=yellow style=filled]
 	
 
-"normal_capture#553302976425431985.11493b249dddd657_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:31_68ac50e6); [line 31, column 10]\n  n$3=*&x:int [line 31, column 10]\n  n$2=*&y:int [line 31, column 10]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:31_68ac50e6=(_fun_lambda_lambda1.cpp:31_68ac50e6::operator(),([by value]n$3 &x:int),([by value]n$2 &y:int)) [line 31, column 10]\n " shape="box"]
+"normal_capture#553302976425431985.11493b249dddd657_3" [label="3:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:31_68ac50e6); [line 31, column 10]\n  n$2=*&x:int [line 31, column 10]\n  n$1=*&y:int [line 31, column 10]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:31_68ac50e6=(_fun_lambda_lambda1.cpp:31_68ac50e6::operator(),([by value]n$2 &x:int),([by value]n$1 &y:int)) [line 31, column 10]\n " shape="box"]
 	
 
 	 "normal_capture#553302976425431985.11493b249dddd657_3" -> "normal_capture#553302976425431985.11493b249dddd657_4" ;
-"normal_capture#553302976425431985.11493b249dddd657_4" [label="4:  Return Stmt \n   n$4=_fun_lambda_lambda1.cpp:31_68ac50e6::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:31_68ac50e6&) [line 31, column 10]\n " shape="box"]
+"normal_capture#553302976425431985.11493b249dddd657_4" [label="4:  Return Stmt \n   n$3=_fun_lambda_lambda1.cpp:31_68ac50e6::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$0:lambda_lambda1.cpp:31_68ac50e6&) [line 31, column 10]\n " shape="box"]
 	
 
 	 "normal_capture#553302976425431985.11493b249dddd657_4" -> "normal_capture#553302976425431985.11493b249dddd657_5" ;
-"normal_capture#553302976425431985.11493b249dddd657_5" [label="5:  Return Stmt \n   *&return:int=n$4 [line 31, column 3]\n " shape="box"]
+"normal_capture#553302976425431985.11493b249dddd657_5" [label="5:  Return Stmt \n   *&return:int=n$3 [line 31, column 3]\n " shape="box"]
 	
 
 	 "normal_capture#553302976425431985.11493b249dddd657_5" -> "normal_capture#553302976425431985.11493b249dddd657_2" ;
@@ -228,11 +228,11 @@ digraph cfg {
 	
 
 	 "ref_capture_by_ref#14681721236694.e4fbc78377bc879f_4" -> "ref_capture_by_ref#14681721236694.e4fbc78377bc879f_2" ;
-"ref_capture_by_ref#14681721236694.e4fbc78377bc879f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:100_eda4da0f); [line 100, column 3]\n  n$4=*&xref:int& [line 100, column 3]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:100_eda4da0f=(_fun_lambda_lambda1.cpp:100_eda4da0f::operator(),([by ref]n$4 &xref:int&)) [line 100, column 3]\n " shape="box"]
+"ref_capture_by_ref#14681721236694.e4fbc78377bc879f_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:100_eda4da0f); [line 100, column 3]\n  n$3=*&xref:int& [line 100, column 3]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:100_eda4da0f=(_fun_lambda_lambda1.cpp:100_eda4da0f::operator(),([by ref]n$3 &xref:int&)) [line 100, column 3]\n " shape="box"]
 	
 
 	 "ref_capture_by_ref#14681721236694.e4fbc78377bc879f_5" -> "ref_capture_by_ref#14681721236694.e4fbc78377bc879f_6" ;
-"ref_capture_by_ref#14681721236694.e4fbc78377bc879f_6" [label="6:  Compound statement \n   n$5=_fun_lambda_lambda1.cpp:100_eda4da0f::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:100_eda4da0f&) [line 100, column 3]\n " shape="box"]
+"ref_capture_by_ref#14681721236694.e4fbc78377bc879f_6" [label="6:  Compound statement \n   n$4=_fun_lambda_lambda1.cpp:100_eda4da0f::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:100_eda4da0f&) [line 100, column 3]\n " shape="box"]
 	
 
 	 "ref_capture_by_ref#14681721236694.e4fbc78377bc879f_6" -> "ref_capture_by_ref#14681721236694.e4fbc78377bc879f_3" ;
@@ -244,7 +244,7 @@ digraph cfg {
 	
 
 	 "ref_capture_by_ref#14681721236694.e4fbc78377bc879f_8" -> "ref_capture_by_ref#14681721236694.e4fbc78377bc879f_7" ;
-"ref_capture_by_value#480657408898.61621d058ca5955e_1" [label="1: Start ref_capture_by_value\nFormals: \nLocals:  ret:int f:lambda_lambda1.cpp:84_d154032c 0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:84_d154032c xref:int& x:int \n  " color=yellow style=filled]
+"ref_capture_by_value#480657408898.61621d058ca5955e_1" [label="1: Start ref_capture_by_value\nFormals: \nLocals:  ret:int f:lambda_lambda1.cpp:84_d154032c 0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:84_d154032c xref:int& x:int \n  " color=yellow style=filled]
 	
 
 	 "ref_capture_by_value#480657408898.61621d058ca5955e_1" -> "ref_capture_by_value#480657408898.61621d058ca5955e_10" ;
@@ -259,11 +259,11 @@ digraph cfg {
 	
 
 	 "ref_capture_by_value#480657408898.61621d058ca5955e_4" -> "ref_capture_by_value#480657408898.61621d058ca5955e_2" ;
-"ref_capture_by_value#480657408898.61621d058ca5955e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(ret:int); [line 85, column 3]\n  n$2=_fun_lambda_lambda1.cpp:84_d154032c::operator()(&f:lambda_lambda1.cpp:84_d154032c&) [line 85, column 13]\n  *&ret:int=n$2 [line 85, column 3]\n " shape="box"]
+"ref_capture_by_value#480657408898.61621d058ca5955e_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(ret:int); [line 85, column 3]\n  n$1=_fun_lambda_lambda1.cpp:84_d154032c::operator()(&f:lambda_lambda1.cpp:84_d154032c&) [line 85, column 13]\n  *&ret:int=n$1 [line 85, column 3]\n " shape="box"]
 	
 
 	 "ref_capture_by_value#480657408898.61621d058ca5955e_5" -> "ref_capture_by_value#480657408898.61621d058ca5955e_3" ;
-"ref_capture_by_value#480657408898.61621d058ca5955e_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:84_d154032c); [line 84, column 12]\n  n$4=*&xref:int& [line 84, column 12]\n  n$5=*n$4:int [line 84, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:84_d154032c=(_fun_lambda_lambda1.cpp:84_d154032c::operator(),([by value]n$5 &xref:int)) [line 84, column 12]\n " shape="box"]
+"ref_capture_by_value#480657408898.61621d058ca5955e_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:84_d154032c); [line 84, column 12]\n  n$3=*&xref:int& [line 84, column 12]\n  n$4=*n$3:int [line 84, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:84_d154032c=(_fun_lambda_lambda1.cpp:84_d154032c::operator(),([by value]n$4 &xref:int)) [line 84, column 12]\n " shape="box"]
 	
 
 	 "ref_capture_by_value#480657408898.61621d058ca5955e_6" -> "ref_capture_by_value#480657408898.61621d058ca5955e_8" ;
@@ -271,7 +271,7 @@ digraph cfg {
 	
 
 	 "ref_capture_by_value#480657408898.61621d058ca5955e_7" -> "ref_capture_by_value#480657408898.61621d058ca5955e_6" ;
-"ref_capture_by_value#480657408898.61621d058ca5955e_8" [label="8:  DeclStmt \n   n$6=_fun_lambda_lambda1.cpp:84_d154032c::lambda_lambda1.cpp:84_0e54436f(&f:lambda_lambda1.cpp:84_d154032c*,&0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:84_d154032c&) [line 84, column 12]\n " shape="box"]
+"ref_capture_by_value#480657408898.61621d058ca5955e_8" [label="8:  DeclStmt \n   n$5=_fun_lambda_lambda1.cpp:84_d154032c::lambda_lambda1.cpp:84_0e54436f(&f:lambda_lambda1.cpp:84_d154032c*,&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:84_d154032c&) [line 84, column 12]\n " shape="box"]
 	
 
 	 "ref_capture_by_value#480657408898.61621d058ca5955e_8" -> "ref_capture_by_value#480657408898.61621d058ca5955e_5" ;
@@ -298,7 +298,7 @@ digraph cfg {
 	
 
 	 "ref_init_capture_by_ref#840841123.399b89cb2bc43219_4" -> "ref_init_capture_by_ref#840841123.399b89cb2bc43219_2" ;
-"ref_init_capture_by_ref#840841123.399b89cb2bc43219_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(xlambda:int&); [line 107, column 3]\n  n$4=*&xref:int& [line 107, column 16]\n  *&xlambda:int&=n$4 [line 107, column 3]\n " shape="box"]
+"ref_init_capture_by_ref#840841123.399b89cb2bc43219_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(xlambda:int&); [line 107, column 3]\n  n$3=*&xref:int& [line 107, column 16]\n  *&xlambda:int&=n$3 [line 107, column 3]\n " shape="box"]
 	
 
 	 "ref_init_capture_by_ref#840841123.399b89cb2bc43219_5" -> "ref_init_capture_by_ref#840841123.399b89cb2bc43219_7" ;
@@ -306,11 +306,11 @@ digraph cfg {
 	
 
 	 "ref_init_capture_by_ref#840841123.399b89cb2bc43219_6" -> "ref_init_capture_by_ref#840841123.399b89cb2bc43219_5" ;
-"ref_init_capture_by_ref#840841123.399b89cb2bc43219_7" [label="7:  DeclStmt \n   n$5=*&xlambda:int& [line 107, column 3]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:107_fe87bedf=(_fun_lambda_lambda1.cpp:107_fe87bedf::operator(),([by ref]n$5 &xlambda:int&)) [line 107, column 3]\n " shape="box"]
+"ref_init_capture_by_ref#840841123.399b89cb2bc43219_7" [label="7:  DeclStmt \n   n$4=*&xlambda:int& [line 107, column 3]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:107_fe87bedf=(_fun_lambda_lambda1.cpp:107_fe87bedf::operator(),([by ref]n$4 &xlambda:int&)) [line 107, column 3]\n " shape="box"]
 	
 
 	 "ref_init_capture_by_ref#840841123.399b89cb2bc43219_7" -> "ref_init_capture_by_ref#840841123.399b89cb2bc43219_8" ;
-"ref_init_capture_by_ref#840841123.399b89cb2bc43219_8" [label="8:  Compound statement \n   n$6=_fun_lambda_lambda1.cpp:107_fe87bedf::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:107_fe87bedf&) [line 107, column 3]\n " shape="box"]
+"ref_init_capture_by_ref#840841123.399b89cb2bc43219_8" [label="8:  Compound statement \n   n$5=_fun_lambda_lambda1.cpp:107_fe87bedf::operator()(&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:107_fe87bedf&) [line 107, column 3]\n " shape="box"]
 	
 
 	 "ref_init_capture_by_ref#840841123.399b89cb2bc43219_8" -> "ref_init_capture_by_ref#840841123.399b89cb2bc43219_3" ;
@@ -322,7 +322,7 @@ digraph cfg {
 	
 
 	 "ref_init_capture_by_ref#840841123.399b89cb2bc43219_10" -> "ref_init_capture_by_ref#840841123.399b89cb2bc43219_9" ;
-"ref_init_capture_by_value#2039100.6db03403e4946224_1" [label="1: Start ref_init_capture_by_value\nFormals: \nLocals:  ret:int f:lambda_lambda1.cpp:92_377e76cc 0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:92_377e76cc xref:int& x:int \n  " color=yellow style=filled]
+"ref_init_capture_by_value#2039100.6db03403e4946224_1" [label="1: Start ref_init_capture_by_value\nFormals: \nLocals:  ret:int f:lambda_lambda1.cpp:92_377e76cc 0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:92_377e76cc xref:int& x:int \n  " color=yellow style=filled]
 	
 
 	 "ref_init_capture_by_value#2039100.6db03403e4946224_1" -> "ref_init_capture_by_value#2039100.6db03403e4946224_12" ;
@@ -337,19 +337,19 @@ digraph cfg {
 	
 
 	 "ref_init_capture_by_value#2039100.6db03403e4946224_4" -> "ref_init_capture_by_value#2039100.6db03403e4946224_2" ;
-"ref_init_capture_by_value#2039100.6db03403e4946224_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(ret:int); [line 93, column 3]\n  n$2=_fun_lambda_lambda1.cpp:92_377e76cc::operator()(&f:lambda_lambda1.cpp:92_377e76cc&) [line 93, column 13]\n  *&ret:int=n$2 [line 93, column 3]\n " shape="box"]
+"ref_init_capture_by_value#2039100.6db03403e4946224_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(ret:int); [line 93, column 3]\n  n$1=_fun_lambda_lambda1.cpp:92_377e76cc::operator()(&f:lambda_lambda1.cpp:92_377e76cc&) [line 93, column 13]\n  *&ret:int=n$1 [line 93, column 3]\n " shape="box"]
 	
 
 	 "ref_init_capture_by_value#2039100.6db03403e4946224_5" -> "ref_init_capture_by_value#2039100.6db03403e4946224_3" ;
-"ref_init_capture_by_value#2039100.6db03403e4946224_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(xlambda:int); [line 92, column 12]\n  n$4=*&xref:int& [line 92, column 23]\n  n$5=*n$4:int [line 92, column 23]\n  *&xlambda:int=n$5 [line 92, column 12]\n " shape="box"]
+"ref_init_capture_by_value#2039100.6db03403e4946224_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(xlambda:int); [line 92, column 12]\n  n$3=*&xref:int& [line 92, column 23]\n  n$4=*n$3:int [line 92, column 23]\n  *&xlambda:int=n$4 [line 92, column 12]\n " shape="box"]
 	
 
 	 "ref_init_capture_by_value#2039100.6db03403e4946224_6" -> "ref_init_capture_by_value#2039100.6db03403e4946224_8" ;
-"ref_init_capture_by_value#2039100.6db03403e4946224_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:92_377e76cc); [line 92, column 12]\n " shape="box"]
+"ref_init_capture_by_value#2039100.6db03403e4946224_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:92_377e76cc); [line 92, column 12]\n " shape="box"]
 	
 
 	 "ref_init_capture_by_value#2039100.6db03403e4946224_7" -> "ref_init_capture_by_value#2039100.6db03403e4946224_6" ;
-"ref_init_capture_by_value#2039100.6db03403e4946224_8" [label="8:  DeclStmt \n   n$6=*&xlambda:int [line 92, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:92_377e76cc=(_fun_lambda_lambda1.cpp:92_377e76cc::operator(),([by value]n$6 &xlambda:int)) [line 92, column 12]\n " shape="box"]
+"ref_init_capture_by_value#2039100.6db03403e4946224_8" [label="8:  DeclStmt \n   n$5=*&xlambda:int [line 92, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:92_377e76cc=(_fun_lambda_lambda1.cpp:92_377e76cc::operator(),([by value]n$5 &xlambda:int)) [line 92, column 12]\n " shape="box"]
 	
 
 	 "ref_init_capture_by_value#2039100.6db03403e4946224_8" -> "ref_init_capture_by_value#2039100.6db03403e4946224_10" ;
@@ -357,7 +357,7 @@ digraph cfg {
 	
 
 	 "ref_init_capture_by_value#2039100.6db03403e4946224_9" -> "ref_init_capture_by_value#2039100.6db03403e4946224_7" ;
-"ref_init_capture_by_value#2039100.6db03403e4946224_10" [label="10:  DeclStmt \n   n$7=_fun_lambda_lambda1.cpp:92_377e76cc::lambda_lambda1.cpp:92_3acac00a(&f:lambda_lambda1.cpp:92_377e76cc*,&0$?%__sil_tmpSIL_materialize_temp__n$3:lambda_lambda1.cpp:92_377e76cc&) [line 92, column 12]\n " shape="box"]
+"ref_init_capture_by_value#2039100.6db03403e4946224_10" [label="10:  DeclStmt \n   n$6=_fun_lambda_lambda1.cpp:92_377e76cc::lambda_lambda1.cpp:92_3acac00a(&f:lambda_lambda1.cpp:92_377e76cc*,&0$?%__sil_tmpSIL_materialize_temp__n$2:lambda_lambda1.cpp:92_377e76cc&) [line 92, column 12]\n " shape="box"]
 	
 
 	 "ref_init_capture_by_value#2039100.6db03403e4946224_10" -> "ref_init_capture_by_value#2039100.6db03403e4946224_5" ;
@@ -369,26 +369,26 @@ digraph cfg {
 	
 
 	 "ref_init_capture_by_value#2039100.6db03403e4946224_12" -> "ref_init_capture_by_value#2039100.6db03403e4946224_11" ;
-"struct_capture#777350784751027428.f3db763dc0b20b24_1" [label="1: Start struct_capture\nFormals: \nLocals:  f:lambda_lambda1.cpp:77_53b2556e 0$?%__sil_tmpSIL_materialize_temp__n$9:lambda_lambda1.cpp:77_53b2556e y:SomeStruct x:SomeStruct \n  " color=yellow style=filled]
+"struct_capture#777350784751027428.f3db763dc0b20b24_1" [label="1: Start struct_capture\nFormals: \nLocals:  f:lambda_lambda1.cpp:77_53b2556e 0$?%__sil_tmpSIL_materialize_temp__n$8:lambda_lambda1.cpp:77_53b2556e y:SomeStruct x:SomeStruct \n  " color=yellow style=filled]
 	
 
 	 "struct_capture#777350784751027428.f3db763dc0b20b24_1" -> "struct_capture#777350784751027428.f3db763dc0b20b24_9" ;
 "struct_capture#777350784751027428.f3db763dc0b20b24_2" [label="2: Exit struct_capture \n  " color=yellow style=filled]
 	
 
-"struct_capture#777350784751027428.f3db763dc0b20b24_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_lambda1.cpp:77_53b2556e::operator()(&f:lambda_lambda1.cpp:77_53b2556e&) [line 78, column 10]\n " shape="box"]
+"struct_capture#777350784751027428.f3db763dc0b20b24_3" [label="3:  Return Stmt \n   n$0=_fun_lambda_lambda1.cpp:77_53b2556e::operator()(&f:lambda_lambda1.cpp:77_53b2556e&) [line 78, column 10]\n " shape="box"]
 	
 
 	 "struct_capture#777350784751027428.f3db763dc0b20b24_3" -> "struct_capture#777350784751027428.f3db763dc0b20b24_4" ;
-"struct_capture#777350784751027428.f3db763dc0b20b24_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 78, column 3]\n  _=*&f:lambda_lambda1.cpp:77_53b2556e [line 78, column 12]\n  n$3=_fun_lambda_lambda1.cpp:77_53b2556e::lambda_lambda1.cpp:77_52e1a36c(&f:lambda_lambda1.cpp:77_53b2556e*) injected [line 78, column 12]\n  _=*&y:SomeStruct [line 78, column 12]\n  n$5=_fun_SomeStruct::~SomeStruct(&y:SomeStruct*) injected [line 78, column 12]\n  _=*&x:SomeStruct [line 78, column 12]\n  n$7=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 78, column 12]\n " shape="box"]
+"struct_capture#777350784751027428.f3db763dc0b20b24_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 78, column 3]\n  _=*&f:lambda_lambda1.cpp:77_53b2556e [line 78, column 12]\n  n$2=_fun_lambda_lambda1.cpp:77_53b2556e::lambda_lambda1.cpp:77_52e1a36c(&f:lambda_lambda1.cpp:77_53b2556e*) injected [line 78, column 12]\n  _=*&y:SomeStruct [line 78, column 12]\n  n$4=_fun_SomeStruct::~SomeStruct(&y:SomeStruct*) injected [line 78, column 12]\n  _=*&x:SomeStruct [line 78, column 12]\n  n$6=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 78, column 12]\n " shape="box"]
 	
 
 	 "struct_capture#777350784751027428.f3db763dc0b20b24_4" -> "struct_capture#777350784751027428.f3db763dc0b20b24_2" ;
-"struct_capture#777350784751027428.f3db763dc0b20b24_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$9:lambda_lambda1.cpp:77_53b2556e); [line 77, column 12]\n  n$12=*&x:SomeStruct& [line 77, column 12]\n  n$11=*&y:SomeStruct& [line 77, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$9:lambda_lambda1.cpp:77_53b2556e=(_fun_lambda_lambda1.cpp:77_53b2556e::operator(),([by value]n$12 &x:SomeStruct&),([by value]n$11 &y:SomeStruct&)) [line 77, column 12]\n " shape="box"]
+"struct_capture#777350784751027428.f3db763dc0b20b24_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$8:lambda_lambda1.cpp:77_53b2556e); [line 77, column 12]\n  n$11=*&x:SomeStruct& [line 77, column 12]\n  n$10=*&y:SomeStruct& [line 77, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$8:lambda_lambda1.cpp:77_53b2556e=(_fun_lambda_lambda1.cpp:77_53b2556e::operator(),([by value]n$11 &x:SomeStruct&),([by value]n$10 &y:SomeStruct&)) [line 77, column 12]\n " shape="box"]
 	
 
 	 "struct_capture#777350784751027428.f3db763dc0b20b24_5" -> "struct_capture#777350784751027428.f3db763dc0b20b24_6" ;
-"struct_capture#777350784751027428.f3db763dc0b20b24_6" [label="6:  Destruction(temporaries cleanup) \n   n$13=_fun_lambda_lambda1.cpp:77_53b2556e::lambda_lambda1.cpp:77_b91970d1(&f:lambda_lambda1.cpp:77_53b2556e*,&0$?%__sil_tmpSIL_materialize_temp__n$9:lambda_lambda1.cpp:77_53b2556e&) [line 77, column 12]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$9:lambda_lambda1.cpp:77_53b2556e [line 77, column 41]\n  n$15=_fun_lambda_lambda1.cpp:77_53b2556e::lambda_lambda1.cpp:77_52e1a36c(&0$?%__sil_tmpSIL_materialize_temp__n$9:lambda_lambda1.cpp:77_53b2556e*) injected [line 77, column 41]\n " shape="box"]
+"struct_capture#777350784751027428.f3db763dc0b20b24_6" [label="6:  Destruction(temporaries cleanup) \n   n$12=_fun_lambda_lambda1.cpp:77_53b2556e::lambda_lambda1.cpp:77_b91970d1(&f:lambda_lambda1.cpp:77_53b2556e*,&0$?%__sil_tmpSIL_materialize_temp__n$8:lambda_lambda1.cpp:77_53b2556e&) [line 77, column 12]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$8:lambda_lambda1.cpp:77_53b2556e [line 77, column 41]\n  n$14=_fun_lambda_lambda1.cpp:77_53b2556e::lambda_lambda1.cpp:77_52e1a36c(&0$?%__sil_tmpSIL_materialize_temp__n$8:lambda_lambda1.cpp:77_53b2556e*) injected [line 77, column 41]\n " shape="box"]
 	
 
 	 "struct_capture#777350784751027428.f3db763dc0b20b24_6" -> "struct_capture#777350784751027428.f3db763dc0b20b24_3" ;
@@ -396,30 +396,30 @@ digraph cfg {
 	
 
 	 "struct_capture#777350784751027428.f3db763dc0b20b24_7" -> "struct_capture#777350784751027428.f3db763dc0b20b24_5" ;
-"struct_capture#777350784751027428.f3db763dc0b20b24_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(y:SomeStruct); [line 76, column 3]\n  n$16=_fun_SomeStruct::SomeStruct(&y:SomeStruct*) [line 76, column 14]\n " shape="box"]
+"struct_capture#777350784751027428.f3db763dc0b20b24_8" [label="8:  DeclStmt \n   VARIABLE_DECLARED(y:SomeStruct); [line 76, column 3]\n  n$15=_fun_SomeStruct::SomeStruct(&y:SomeStruct*) [line 76, column 14]\n " shape="box"]
 	
 
 	 "struct_capture#777350784751027428.f3db763dc0b20b24_8" -> "struct_capture#777350784751027428.f3db763dc0b20b24_7" ;
-"struct_capture#777350784751027428.f3db763dc0b20b24_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 75, column 3]\n  n$17=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 75, column 14]\n " shape="box"]
+"struct_capture#777350784751027428.f3db763dc0b20b24_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 75, column 3]\n  n$16=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 75, column 14]\n " shape="box"]
 	
 
 	 "struct_capture#777350784751027428.f3db763dc0b20b24_9" -> "struct_capture#777350784751027428.f3db763dc0b20b24_8" ;
-"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_1" [label="1: Start struct_capture_by_ref\nFormals: \nLocals:  f:lambda_lambda1.cpp:121_adee64af 0$?%__sil_tmpSIL_materialize_temp__n$5:lambda_lambda1.cpp:121_adee64af xref:SomeStruct& x:SomeStruct \n  " color=yellow style=filled]
+"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_1" [label="1: Start struct_capture_by_ref\nFormals: \nLocals:  f:lambda_lambda1.cpp:121_adee64af 0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:121_adee64af xref:SomeStruct& x:SomeStruct \n  " color=yellow style=filled]
 	
 
 	 "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_1" -> "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_9" ;
 "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_2" [label="2: Exit struct_capture_by_ref \n  " color=yellow style=filled]
 	
 
-"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_lambda1.cpp:121_adee64af::operator()(&f:lambda_lambda1.cpp:121_adee64af&) [line 125, column 10]\n " shape="box"]
+"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_3" [label="3:  Return Stmt \n   n$0=_fun_lambda_lambda1.cpp:121_adee64af::operator()(&f:lambda_lambda1.cpp:121_adee64af&) [line 125, column 10]\n " shape="box"]
 	
 
 	 "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_3" -> "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_4" ;
-"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 125, column 3]\n  _=*&x:SomeStruct [line 125, column 12]\n  n$3=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 125, column 12]\n " shape="box"]
+"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 125, column 3]\n  _=*&x:SomeStruct [line 125, column 12]\n  n$2=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 125, column 12]\n " shape="box"]
 	
 
 	 "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_4" -> "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_2" ;
-"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$5:lambda_lambda1.cpp:121_adee64af); [line 121, column 12]\n  n$6=*&xref:SomeStruct& [line 121, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$5:lambda_lambda1.cpp:121_adee64af=(_fun_lambda_lambda1.cpp:121_adee64af::operator(),&x,([by ref]n$6 &xref:SomeStruct&)) [line 121, column 12]\n " shape="box"]
+"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:121_adee64af); [line 121, column 12]\n  n$5=*&xref:SomeStruct& [line 121, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:121_adee64af=(_fun_lambda_lambda1.cpp:121_adee64af::operator(),&x,([by ref]n$5 &xref:SomeStruct&)) [line 121, column 12]\n " shape="box"]
 	
 
 	 "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_5" -> "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_7" ;
@@ -427,7 +427,7 @@ digraph cfg {
 	
 
 	 "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_6" -> "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_5" ;
-"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_7" [label="7:  DeclStmt \n   n$7=_fun_lambda_lambda1.cpp:121_adee64af::lambda_lambda1.cpp:121_a04e0893(&f:lambda_lambda1.cpp:121_adee64af*,&0$?%__sil_tmpSIL_materialize_temp__n$5:lambda_lambda1.cpp:121_adee64af&) [line 121, column 12]\n " shape="box"]
+"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_7" [label="7:  DeclStmt \n   n$6=_fun_lambda_lambda1.cpp:121_adee64af::lambda_lambda1.cpp:121_a04e0893(&f:lambda_lambda1.cpp:121_adee64af*,&0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:121_adee64af&) [line 121, column 12]\n " shape="box"]
 	
 
 	 "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_7" -> "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_3" ;
@@ -435,30 +435,30 @@ digraph cfg {
 	
 
 	 "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_8" -> "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_6" ;
-"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 119, column 3]\n  n$8=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 119, column 14]\n " shape="box"]
+"struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 119, column 3]\n  n$7=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 119, column 14]\n " shape="box"]
 	
 
 	 "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_9" -> "struct_capture_by_ref#12577537422.ebc118d2dbc2f2f5_8" ;
-"struct_capture_by_value#116991472.903e0c9fb8b98128_1" [label="1: Start struct_capture_by_value\nFormals: \nLocals:  f:lambda_lambda1.cpp:114_8f63c59e 0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:114_8f63c59e xref:SomeStruct& x:SomeStruct \n  " color=yellow style=filled]
+"struct_capture_by_value#116991472.903e0c9fb8b98128_1" [label="1: Start struct_capture_by_value\nFormals: \nLocals:  f:lambda_lambda1.cpp:114_8f63c59e 0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:114_8f63c59e xref:SomeStruct& x:SomeStruct \n  " color=yellow style=filled]
 	
 
 	 "struct_capture_by_value#116991472.903e0c9fb8b98128_1" -> "struct_capture_by_value#116991472.903e0c9fb8b98128_9" ;
 "struct_capture_by_value#116991472.903e0c9fb8b98128_2" [label="2: Exit struct_capture_by_value \n  " color=yellow style=filled]
 	
 
-"struct_capture_by_value#116991472.903e0c9fb8b98128_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_lambda1.cpp:114_8f63c59e::operator()(&f:lambda_lambda1.cpp:114_8f63c59e&) [line 115, column 10]\n " shape="box"]
+"struct_capture_by_value#116991472.903e0c9fb8b98128_3" [label="3:  Return Stmt \n   n$0=_fun_lambda_lambda1.cpp:114_8f63c59e::operator()(&f:lambda_lambda1.cpp:114_8f63c59e&) [line 115, column 10]\n " shape="box"]
 	
 
 	 "struct_capture_by_value#116991472.903e0c9fb8b98128_3" -> "struct_capture_by_value#116991472.903e0c9fb8b98128_4" ;
-"struct_capture_by_value#116991472.903e0c9fb8b98128_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 115, column 3]\n  _=*&f:lambda_lambda1.cpp:114_8f63c59e [line 115, column 12]\n  n$3=_fun_lambda_lambda1.cpp:114_8f63c59e::lambda_lambda1.cpp:114_3411cb22(&f:lambda_lambda1.cpp:114_8f63c59e*) injected [line 115, column 12]\n  _=*&x:SomeStruct [line 115, column 12]\n  n$5=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 115, column 12]\n " shape="box"]
+"struct_capture_by_value#116991472.903e0c9fb8b98128_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 115, column 3]\n  _=*&f:lambda_lambda1.cpp:114_8f63c59e [line 115, column 12]\n  n$2=_fun_lambda_lambda1.cpp:114_8f63c59e::lambda_lambda1.cpp:114_3411cb22(&f:lambda_lambda1.cpp:114_8f63c59e*) injected [line 115, column 12]\n  _=*&x:SomeStruct [line 115, column 12]\n  n$4=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 115, column 12]\n " shape="box"]
 	
 
 	 "struct_capture_by_value#116991472.903e0c9fb8b98128_4" -> "struct_capture_by_value#116991472.903e0c9fb8b98128_2" ;
-"struct_capture_by_value#116991472.903e0c9fb8b98128_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:114_8f63c59e); [line 114, column 12]\n  n$10=*&x:SomeStruct& [line 114, column 12]\n  n$9=*&xref:SomeStruct& [line 114, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:114_8f63c59e=(_fun_lambda_lambda1.cpp:114_8f63c59e::operator(),([by value]n$10 &x:SomeStruct&),([by value]n$9 &xref:SomeStruct&)) [line 114, column 12]\n " shape="box"]
+"struct_capture_by_value#116991472.903e0c9fb8b98128_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:114_8f63c59e); [line 114, column 12]\n  n$9=*&x:SomeStruct& [line 114, column 12]\n  n$8=*&xref:SomeStruct& [line 114, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:114_8f63c59e=(_fun_lambda_lambda1.cpp:114_8f63c59e::operator(),([by value]n$9 &x:SomeStruct&),([by value]n$8 &xref:SomeStruct&)) [line 114, column 12]\n " shape="box"]
 	
 
 	 "struct_capture_by_value#116991472.903e0c9fb8b98128_5" -> "struct_capture_by_value#116991472.903e0c9fb8b98128_6" ;
-"struct_capture_by_value#116991472.903e0c9fb8b98128_6" [label="6:  Destruction(temporaries cleanup) \n   n$11=_fun_lambda_lambda1.cpp:114_8f63c59e::lambda_lambda1.cpp:114_a3877209(&f:lambda_lambda1.cpp:114_8f63c59e*,&0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:114_8f63c59e&) [line 114, column 12]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:114_8f63c59e [line 114, column 47]\n  n$13=_fun_lambda_lambda1.cpp:114_8f63c59e::lambda_lambda1.cpp:114_3411cb22(&0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:114_8f63c59e*) injected [line 114, column 47]\n " shape="box"]
+"struct_capture_by_value#116991472.903e0c9fb8b98128_6" [label="6:  Destruction(temporaries cleanup) \n   n$10=_fun_lambda_lambda1.cpp:114_8f63c59e::lambda_lambda1.cpp:114_a3877209(&f:lambda_lambda1.cpp:114_8f63c59e*,&0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:114_8f63c59e&) [line 114, column 12]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:114_8f63c59e [line 114, column 47]\n  n$12=_fun_lambda_lambda1.cpp:114_8f63c59e::lambda_lambda1.cpp:114_3411cb22(&0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:114_8f63c59e*) injected [line 114, column 47]\n " shape="box"]
 	
 
 	 "struct_capture_by_value#116991472.903e0c9fb8b98128_6" -> "struct_capture_by_value#116991472.903e0c9fb8b98128_3" ;
@@ -470,26 +470,26 @@ digraph cfg {
 	
 
 	 "struct_capture_by_value#116991472.903e0c9fb8b98128_8" -> "struct_capture_by_value#116991472.903e0c9fb8b98128_7" ;
-"struct_capture_by_value#116991472.903e0c9fb8b98128_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 112, column 3]\n  n$14=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 112, column 14]\n " shape="box"]
+"struct_capture_by_value#116991472.903e0c9fb8b98128_9" [label="9:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 112, column 3]\n  n$13=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 112, column 14]\n " shape="box"]
 	
 
 	 "struct_capture_by_value#116991472.903e0c9fb8b98128_9" -> "struct_capture_by_value#116991472.903e0c9fb8b98128_8" ;
-"struct_init_capture_by_ref#920509.142e205b831e508a_1" [label="1: Start struct_init_capture_by_ref\nFormals: \nLocals:  f:lambda_lambda1.cpp:140_41385ab3 0$?%__sil_tmpSIL_materialize_temp__n$5:lambda_lambda1.cpp:140_41385ab3 xref:SomeStruct& x:SomeStruct \n  " color=yellow style=filled]
+"struct_init_capture_by_ref#920509.142e205b831e508a_1" [label="1: Start struct_init_capture_by_ref\nFormals: \nLocals:  f:lambda_lambda1.cpp:140_41385ab3 0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:140_41385ab3 xref:SomeStruct& x:SomeStruct \n  " color=yellow style=filled]
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_1" -> "struct_init_capture_by_ref#920509.142e205b831e508a_12" ;
 "struct_init_capture_by_ref#920509.142e205b831e508a_2" [label="2: Exit struct_init_capture_by_ref \n  " color=yellow style=filled]
 	
 
-"struct_init_capture_by_ref#920509.142e205b831e508a_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_lambda1.cpp:140_41385ab3::operator()(&f:lambda_lambda1.cpp:140_41385ab3&) [line 144, column 10]\n " shape="box"]
+"struct_init_capture_by_ref#920509.142e205b831e508a_3" [label="3:  Return Stmt \n   n$0=_fun_lambda_lambda1.cpp:140_41385ab3::operator()(&f:lambda_lambda1.cpp:140_41385ab3&) [line 144, column 10]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_3" -> "struct_init_capture_by_ref#920509.142e205b831e508a_4" ;
-"struct_init_capture_by_ref#920509.142e205b831e508a_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 144, column 3]\n  _=*&x:SomeStruct [line 144, column 12]\n  n$3=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 144, column 12]\n " shape="box"]
+"struct_init_capture_by_ref#920509.142e205b831e508a_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 144, column 3]\n  _=*&x:SomeStruct [line 144, column 12]\n  n$2=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 144, column 12]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_4" -> "struct_init_capture_by_ref#920509.142e205b831e508a_2" ;
-"struct_init_capture_by_ref#920509.142e205b831e508a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(xreflambda:SomeStruct&); [line 140, column 12]\n  n$6=*&xref:SomeStruct& [line 140, column 42]\n  *&xreflambda:SomeStruct&=n$6 [line 140, column 12]\n " shape="box"]
+"struct_init_capture_by_ref#920509.142e205b831e508a_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(xreflambda:SomeStruct&); [line 140, column 12]\n  n$5=*&xref:SomeStruct& [line 140, column 42]\n  *&xreflambda:SomeStruct&=n$5 [line 140, column 12]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_5" -> "struct_init_capture_by_ref#920509.142e205b831e508a_8" ;
@@ -497,11 +497,11 @@ digraph cfg {
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_6" -> "struct_init_capture_by_ref#920509.142e205b831e508a_5" ;
-"struct_init_capture_by_ref#920509.142e205b831e508a_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$5:lambda_lambda1.cpp:140_41385ab3); [line 140, column 12]\n " shape="box"]
+"struct_init_capture_by_ref#920509.142e205b831e508a_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:140_41385ab3); [line 140, column 12]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_7" -> "struct_init_capture_by_ref#920509.142e205b831e508a_6" ;
-"struct_init_capture_by_ref#920509.142e205b831e508a_8" [label="8:  DeclStmt \n   n$8=*&xlambda:SomeStruct& [line 140, column 12]\n  n$7=*&xreflambda:SomeStruct& [line 140, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$5:lambda_lambda1.cpp:140_41385ab3=(_fun_lambda_lambda1.cpp:140_41385ab3::operator(),([by ref]n$8 &xlambda:SomeStruct&),([by ref]n$7 &xreflambda:SomeStruct&)) [line 140, column 12]\n " shape="box"]
+"struct_init_capture_by_ref#920509.142e205b831e508a_8" [label="8:  DeclStmt \n   n$7=*&xlambda:SomeStruct& [line 140, column 12]\n  n$6=*&xreflambda:SomeStruct& [line 140, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:140_41385ab3=(_fun_lambda_lambda1.cpp:140_41385ab3::operator(),([by ref]n$7 &xlambda:SomeStruct&),([by ref]n$6 &xreflambda:SomeStruct&)) [line 140, column 12]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_8" -> "struct_init_capture_by_ref#920509.142e205b831e508a_10" ;
@@ -509,7 +509,7 @@ digraph cfg {
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_9" -> "struct_init_capture_by_ref#920509.142e205b831e508a_7" ;
-"struct_init_capture_by_ref#920509.142e205b831e508a_10" [label="10:  DeclStmt \n   n$9=_fun_lambda_lambda1.cpp:140_41385ab3::lambda_lambda1.cpp:140_0132ef85(&f:lambda_lambda1.cpp:140_41385ab3*,&0$?%__sil_tmpSIL_materialize_temp__n$5:lambda_lambda1.cpp:140_41385ab3&) [line 140, column 12]\n " shape="box"]
+"struct_init_capture_by_ref#920509.142e205b831e508a_10" [label="10:  DeclStmt \n   n$8=_fun_lambda_lambda1.cpp:140_41385ab3::lambda_lambda1.cpp:140_0132ef85(&f:lambda_lambda1.cpp:140_41385ab3*,&0$?%__sil_tmpSIL_materialize_temp__n$4:lambda_lambda1.cpp:140_41385ab3&) [line 140, column 12]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_10" -> "struct_init_capture_by_ref#920509.142e205b831e508a_3" ;
@@ -517,42 +517,42 @@ digraph cfg {
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_11" -> "struct_init_capture_by_ref#920509.142e205b831e508a_9" ;
-"struct_init_capture_by_ref#920509.142e205b831e508a_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 138, column 3]\n  n$10=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 138, column 14]\n " shape="box"]
+"struct_init_capture_by_ref#920509.142e205b831e508a_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 138, column 3]\n  n$9=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 138, column 14]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_ref#920509.142e205b831e508a_12" -> "struct_init_capture_by_ref#920509.142e205b831e508a_11" ;
-"struct_init_capture_by_value#3463.b06cb2db506297a6_1" [label="1: Start struct_init_capture_by_value\nFormals: \nLocals:  f:lambda_lambda1.cpp:131_815acded 0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:131_815acded xref:SomeStruct& x:SomeStruct \n  " color=yellow style=filled]
+"struct_init_capture_by_value#3463.b06cb2db506297a6_1" [label="1: Start struct_init_capture_by_value\nFormals: \nLocals:  f:lambda_lambda1.cpp:131_815acded 0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:131_815acded xref:SomeStruct& x:SomeStruct \n  " color=yellow style=filled]
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_1" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_12" ;
 "struct_init_capture_by_value#3463.b06cb2db506297a6_2" [label="2: Exit struct_init_capture_by_value \n  " color=yellow style=filled]
 	
 
-"struct_init_capture_by_value#3463.b06cb2db506297a6_3" [label="3:  Return Stmt \n   n$1=_fun_lambda_lambda1.cpp:131_815acded::operator()(&f:lambda_lambda1.cpp:131_815acded&) [line 134, column 10]\n " shape="box"]
+"struct_init_capture_by_value#3463.b06cb2db506297a6_3" [label="3:  Return Stmt \n   n$0=_fun_lambda_lambda1.cpp:131_815acded::operator()(&f:lambda_lambda1.cpp:131_815acded&) [line 134, column 10]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_3" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_4" ;
-"struct_init_capture_by_value#3463.b06cb2db506297a6_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 134, column 3]\n  _=*&f:lambda_lambda1.cpp:131_815acded [line 134, column 12]\n  n$3=_fun_lambda_lambda1.cpp:131_815acded::lambda_lambda1.cpp:131_dfe5c888(&f:lambda_lambda1.cpp:131_815acded*) injected [line 134, column 12]\n  _=*&x:SomeStruct [line 134, column 12]\n  n$5=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 134, column 12]\n " shape="box"]
+"struct_init_capture_by_value#3463.b06cb2db506297a6_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 134, column 3]\n  _=*&f:lambda_lambda1.cpp:131_815acded [line 134, column 12]\n  n$2=_fun_lambda_lambda1.cpp:131_815acded::lambda_lambda1.cpp:131_dfe5c888(&f:lambda_lambda1.cpp:131_815acded*) injected [line 134, column 12]\n  _=*&x:SomeStruct [line 134, column 12]\n  n$4=_fun_SomeStruct::~SomeStruct(&x:SomeStruct*) injected [line 134, column 12]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_4" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_2" ;
-"struct_init_capture_by_value#3463.b06cb2db506297a6_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(xreflambda:SomeStruct); [line 131, column 12]\n  n$9=*&xref:SomeStruct& [line 131, column 39]\n  n$10=_fun_SomeStruct::SomeStruct(&xreflambda:SomeStruct*,n$9:SomeStruct&) [line 131, column 39]\n " shape="box"]
+"struct_init_capture_by_value#3463.b06cb2db506297a6_5" [label="5:  DeclStmt \n   VARIABLE_DECLARED(xreflambda:SomeStruct); [line 131, column 12]\n  n$8=*&xref:SomeStruct& [line 131, column 39]\n  n$9=_fun_SomeStruct::SomeStruct(&xreflambda:SomeStruct*,n$8:SomeStruct&) [line 131, column 39]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_5" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_8" ;
-"struct_init_capture_by_value#3463.b06cb2db506297a6_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(xlambda:SomeStruct); [line 131, column 12]\n  n$12=_fun_SomeStruct::SomeStruct(&xlambda:SomeStruct*,&x:SomeStruct&) [line 131, column 23]\n " shape="box"]
+"struct_init_capture_by_value#3463.b06cb2db506297a6_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(xlambda:SomeStruct); [line 131, column 12]\n  n$11=_fun_SomeStruct::SomeStruct(&xlambda:SomeStruct*,&x:SomeStruct&) [line 131, column 23]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_6" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_5" ;
-"struct_init_capture_by_value#3463.b06cb2db506297a6_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:131_815acded); [line 131, column 12]\n " shape="box"]
+"struct_init_capture_by_value#3463.b06cb2db506297a6_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:131_815acded); [line 131, column 12]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_7" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_6" ;
-"struct_init_capture_by_value#3463.b06cb2db506297a6_8" [label="8:  DeclStmt \n   n$13=*&xlambda:SomeStruct& [line 131, column 12]\n  n$11=*&xreflambda:SomeStruct& [line 131, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:131_815acded=(_fun_lambda_lambda1.cpp:131_815acded::operator(),([by value]n$13 &xlambda:SomeStruct&),([by value]n$11 &xreflambda:SomeStruct&)) [line 131, column 12]\n " shape="box"]
+"struct_init_capture_by_value#3463.b06cb2db506297a6_8" [label="8:  DeclStmt \n   n$12=*&xlambda:SomeStruct& [line 131, column 12]\n  n$10=*&xreflambda:SomeStruct& [line 131, column 12]\n  *&0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:131_815acded=(_fun_lambda_lambda1.cpp:131_815acded::operator(),([by value]n$12 &xlambda:SomeStruct&),([by value]n$10 &xreflambda:SomeStruct&)) [line 131, column 12]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_8" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_9" ;
-"struct_init_capture_by_value#3463.b06cb2db506297a6_9" [label="9:  Destruction(temporaries cleanup) \n   n$14=_fun_lambda_lambda1.cpp:131_815acded::lambda_lambda1.cpp:131_91f18bb2(&f:lambda_lambda1.cpp:131_815acded*,&0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:131_815acded&) [line 131, column 12]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:131_815acded [line 133, column 3]\n  n$16=_fun_lambda_lambda1.cpp:131_815acded::lambda_lambda1.cpp:131_dfe5c888(&0$?%__sil_tmpSIL_materialize_temp__n$7:lambda_lambda1.cpp:131_815acded*) injected [line 133, column 3]\n " shape="box"]
+"struct_init_capture_by_value#3463.b06cb2db506297a6_9" [label="9:  Destruction(temporaries cleanup) \n   n$13=_fun_lambda_lambda1.cpp:131_815acded::lambda_lambda1.cpp:131_91f18bb2(&f:lambda_lambda1.cpp:131_815acded*,&0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:131_815acded&) [line 131, column 12]\n  _=*&0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:131_815acded [line 133, column 3]\n  n$15=_fun_lambda_lambda1.cpp:131_815acded::lambda_lambda1.cpp:131_dfe5c888(&0$?%__sil_tmpSIL_materialize_temp__n$6:lambda_lambda1.cpp:131_815acded*) injected [line 133, column 3]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_9" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_3" ;
@@ -564,7 +564,7 @@ digraph cfg {
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_11" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_10" ;
-"struct_init_capture_by_value#3463.b06cb2db506297a6_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 129, column 3]\n  n$17=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 129, column 14]\n " shape="box"]
+"struct_init_capture_by_value#3463.b06cb2db506297a6_12" [label="12:  DeclStmt \n   VARIABLE_DECLARED(x:SomeStruct); [line 129, column 3]\n  n$16=_fun_SomeStruct::SomeStruct(&x:SomeStruct*) [line 129, column 14]\n " shape="box"]
 	
 
 	 "struct_init_capture_by_value#3463.b06cb2db506297a6_12" -> "struct_init_capture_by_value#3463.b06cb2db506297a6_11" ;

@@ -304,19 +304,19 @@ digraph cfg {
 "operator_star_null_deref1#1418716.74372e24230903d2_2" [label="2: Exit operator_star_null_deref1 \n  " color=yellow style=filled]
 	
 
-"operator_star_null_deref1#1418716.74372e24230903d2_3" [label="3:  Return Stmt \n   n$1=*&t:int* [line 111, column 10]\n  n$2=*n$1:int [line 111, column 10]\n " shape="box"]
+"operator_star_null_deref1#1418716.74372e24230903d2_3" [label="3:  Return Stmt \n   n$0=*&t:int* [line 111, column 10]\n  n$1=*n$0:int [line 111, column 10]\n " shape="box"]
 	
 
 	 "operator_star_null_deref1#1418716.74372e24230903d2_3" -> "operator_star_null_deref1#1418716.74372e24230903d2_4" ;
-"operator_star_null_deref1#1418716.74372e24230903d2_4" [label="4:  Return Stmt \n   *&return:int=n$2 [line 111, column 3]\n " shape="box"]
+"operator_star_null_deref1#1418716.74372e24230903d2_4" [label="4:  Return Stmt \n   *&return:int=n$1 [line 111, column 3]\n " shape="box"]
 	
 
 	 "operator_star_null_deref1#1418716.74372e24230903d2_4" -> "operator_star_null_deref1#1418716.74372e24230903d2_2" ;
-"operator_star_null_deref1#1418716.74372e24230903d2_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 110, column 3]\n  n$4=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 110, column 3]\n " shape="box"]
+"operator_star_null_deref1#1418716.74372e24230903d2_5" [label="5:  Call _fun_TranslateAsPtr<int>::setPtr \n   _=*&t:int* [line 110, column 3]\n  n$3=_fun_TranslateAsPtr<int>::setPtr(&t:int*&,null:int*) [line 110, column 3]\n " shape="box"]
 	
 
 	 "operator_star_null_deref1#1418716.74372e24230903d2_5" -> "operator_star_null_deref1#1418716.74372e24230903d2_3" ;
-"operator_star_null_deref1#1418716.74372e24230903d2_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 109, column 3]\n  n$5=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 109, column 23]\n " shape="box"]
+"operator_star_null_deref1#1418716.74372e24230903d2_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(t:int*); [line 109, column 3]\n  n$4=_fun_TranslateAsPtr<int>::TranslateAsPtr(&t:int**,null:int*) [line 109, column 23]\n " shape="box"]
 	
 
 	 "operator_star_null_deref1#1418716.74372e24230903d2_6" -> "operator_star_null_deref1#1418716.74372e24230903d2_5" ;

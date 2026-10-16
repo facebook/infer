@@ -107,8 +107,8 @@ define use_constexpr_lambda() : void {
       jmp node_3 @[22:3]
       
   #node_3: @[22:3]
-      n2:int = load &x @[22:25]
-      n3 = lambda_constexpr_template_cpp_22_HASH.__operator_call(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0, n2) @[22:3]
+      n1:int = load &x @[22:25]
+      n2 = lambda_constexpr_template_cpp_22_HASH.__operator_call(&__sil_tmp_0$____sil_tmpSIL_materialize_temp__n$0, n1) @[22:3]
       jmp node_4 @[22:3]
       
   #node_1: @[21:3]
