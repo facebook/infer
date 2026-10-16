@@ -111,3 +111,21 @@ void trace_correctly_through_wrappers_bad() {
   // the wrapper explicitly here to help understand the bug report
   free_wrapper(x, 0);
 }
+
+struct pair {
+  int first;
+  int second;
+};
+
+void free_pair(struct pair* p) { free(p); }
+
+// the callee only invalidates the fields of the freed object that it accessed
+void FN_field_ptr_after_callee_free_bad() {
+  struct pair* p = (struct pair*)malloc(sizeof(struct pair));
+  if (p == NULL) {
+    return;
+  }
+  int* first = &p->first;
+  free_pair(p);
+  *first = 42;
+}

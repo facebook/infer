@@ -791,3 +791,10 @@ void unsafe_function_call_bad(folly::F14FastMap<int, int>& map) {
 void unsafe_function_call_lambda_bad(folly::F14FastMap<int, int>&& map) {
   [&]() { const auto result = mul(map[13], map[71]); };
 }
+
+void folly_fastmap_try_emplace_key_only_bad() {
+  folly::F14FastMap<int, int> map = {{1, 1}, {2, 4}, {3, 9}};
+  const auto& valueRef = map.at(1);
+  map.try_emplace(4);
+  const auto valueCopy = valueRef;
+}

@@ -17,3 +17,19 @@ void deref_vector_element_after_push_back_bad(std::vector<int>& vec) {
   std::cout << *y << "\n"; // bad: y might be invalid
 }
 ```
+
+The same applies to the buffer of a `std::basic_string`: the pointer
+returned by `data()` or `c_str()`, an iterator returned by `begin()`,
+or the pointer returned by `data()` of a `std::string_view` of the
+string, might become invalid after a call to a mutating member
+function such as `append()`, `clear()`, `push_back()`, `operator+=`,
+`operator=` or `reserve()`, as the standard allows. Unlike for
+`std::vector`, this is reported even after a call to `reserve()`.
+
+```cpp
+char deref_c_str_after_append_bad(std::string& s) {
+  const char* p = s.c_str();
+  s.append(1000, 'x'); // may re-allocate the buffer
+  return *p;           // bad: p might be invalid
+}
+```
