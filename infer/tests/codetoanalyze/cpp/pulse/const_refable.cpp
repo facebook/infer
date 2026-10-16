@@ -72,6 +72,19 @@ int sum_in_loop_bad(std::vector<int> vec) {
   return total;
 }
 
+int sum_set_in_loop_bad(std::set<int> set) {
+  int total = 0;
+  for (int x : set) {
+    total += x;
+  }
+  return total;
+}
+
+int erase_first_ok(std::set<int> set) {
+  set.erase(set.begin());
+  return set.size();
+}
+
 // anonymous parameters usually exist to satisfy the signature for virtual
 // functions. If we recommend const ref, the signature would not match and
 // making the base function const-refable might not be possible since it might
@@ -202,6 +215,17 @@ void void_cast(std::string* s) { (void)s; }
 
 // FN because now infer_skip is addressed as an unknown call
 void call_void_cast_bad_FN(std::string s) { void_cast(&s); }
+
+void read_chars(const char* p);
+
+void read_c_str_bad(std::string s) { read_chars(s.c_str()); }
+
+// [(void)p] is translated to an unknown call that is considered to write to
+// what [p] points to
+void void_cast_c_str_bad_FN(std::string s) {
+  const char* p = s.c_str();
+  (void)p;
+}
 
 int get_lambda(const std::function<int(Arr)>& f, Arr a) {
   return f(std::move(a));

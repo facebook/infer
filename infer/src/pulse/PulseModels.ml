@@ -15,10 +15,11 @@ module ProcNameDispatcher = struct
       ( FbPulseModels.matchers @ PulseModelsCSharp.matchers
       @ PulseModelsObjC.transfer_ownership_matchers @ PulseModelsCpp.abort_matchers
       @ PulseModelsAndroid.matchers @ PulseModelsC.matchers @ PulseModelsCpp.matchers
-      @ PulseModelsErlang.matchers @ PulseModelsGenericArrayBackedCollection.matchers
-      @ PulseModelsHack.matchers @ PulseModelsJava.matchers @ PulseModelsObjC.matchers
-      @ PulseModelsOptional.matchers @ PulseModelsSmartPointers.matchers @ PulseModelsLocks.matchers
-      @ PulseModelsRust.matchers @ Basic.matchers )
+      @ PulseModelsStdContainers.matchers @ PulseModelsErlang.matchers
+      @ PulseModelsGenericArrayBackedCollection.matchers @ PulseModelsHack.matchers
+      @ PulseModelsJava.matchers @ PulseModelsObjC.matchers @ PulseModelsOptional.matchers
+      @ PulseModelsSmartPointers.matchers @ PulseModelsLocks.matchers @ PulseModelsRust.matchers
+      @ Basic.matchers )
 end
 
 let dispatch tenv proc_name args =

@@ -23,6 +23,10 @@ module Vector : sig
   val push_back : AbstractValue.t * ValueHistory.t -> desc:string -> model_no_non_disj
 end
 
+module GenericMapCollection : sig
+  val pair_second_access : Typ.t -> Typ.t -> Access.t
+end
+
 module Function : sig
   val operator_call :
        deref_lambda_ptr:bool

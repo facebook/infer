@@ -80,6 +80,15 @@ val to_internal_size_deref :
   -> AbductiveDomain.t
   -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
 
+val assign_size :
+     PathContext.t
+  -> Location.t
+  -> AbstractValue.t * ValueHistory.t
+  -> AbstractValue.t * ValueHistory.t
+  -> desc:string
+  -> AbductiveDomain.t
+  -> AbductiveDomain.t AccessResult.t
+
 val assign_size_constant :
      PathContext.t
   -> Location.t
@@ -92,6 +101,15 @@ val assign_size_constant :
 module Iterator : sig
   val internal_pointer : Fieldname.t
 
+  val check_not_end :
+       Location.t
+    -> ?index:AbstractValue.t * ValueHistory.t
+    -> AbstractValue.t * ValueHistory.t
+    -> AbductiveDomain.t
+    -> AbductiveDomain.t AccessResult.t
+  (** report an access to the end iterator of a collection if the value (or [index]) is the
+      past-the-end value of the collection *)
+
   val to_internal_pointer :
        PathContext.t
     -> access_mode
@@ -99,6 +117,10 @@ module Iterator : sig
     -> AbstractValue.t * ValueHistory.t
     -> AbductiveDomain.t
     -> (AbductiveDomain.t * (AbstractValue.t * ValueHistory.t)) AccessResult.t
+
+  val compare_values :
+    [< `Equal | `NotEqual] -> desc:string -> AbstractValue.t -> AbstractValue.t -> model_no_non_disj
+  (** [operator==] or [operator!=] on two iterators whose positions are the given values *)
 
   val construct :
        PathContext.t
@@ -108,4 +130,16 @@ module Iterator : sig
     -> ref:AbstractValue.t * ValueHistory.t
     -> AbductiveDomain.t
     -> AbductiveDomain.t AccessResult.t
+
+  val point_into :
+       PathContext.t
+    -> Location.t
+    -> ValueHistory.event
+    -> collection:AbstractValue.t * ValueHistory.t
+    -> iter:AbstractValue.t * ValueHistory.t
+    -> ?index:AbstractValue.t
+    -> AbductiveDomain.t
+    -> AbductiveDomain.t AccessResult.t
+  (** make [iter] point to the element at [index], or at an unknown position if not given, in the
+      backing array of [collection], which is either a collection or an iterator into it *)
 end
