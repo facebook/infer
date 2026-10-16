@@ -28,7 +28,7 @@ digraph cfg {
 	
 
 	 "label_case.83d07a314df10064_7" -> "label_case.83d07a314df10064_6" ;
-"label_case.83d07a314df10064_8" [label="8:  UnaryOperator \n   n$6=*&ret:int [line 28, column 7]\n  *&ret:int=(n$6 + 1) [line 28, column 7]\n " shape="box"]
+"label_case.83d07a314df10064_8" [label="8:  UnaryOperator \n   n$5=*&ret:int [line 28, column 7]\n  *&ret:int=(n$5 + 1) [line 28, column 7]\n " shape="box"]
 	
 
 	 "label_case.83d07a314df10064_8" -> "label_case.83d07a314df10064_7" ;
@@ -94,7 +94,7 @@ digraph cfg {
 	
 
 	 "label_default.f30729864b0243c0_8" -> "label_default.f30729864b0243c0_3" ;
-"label_default.f30729864b0243c0_9" [label="9:  UnaryOperator \n   n$6=*&ret:int [line 12, column 7]\n  *&ret:int=(n$6 + 1) [line 12, column 7]\n " shape="box"]
+"label_default.f30729864b0243c0_9" [label="9:  UnaryOperator \n   n$5=*&ret:int [line 12, column 7]\n  *&ret:int=(n$5 + 1) [line 12, column 7]\n " shape="box"]
 	
 
 	 "label_default.f30729864b0243c0_9" -> "label_default.f30729864b0243c0_7" ;

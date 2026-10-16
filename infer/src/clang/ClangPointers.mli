@@ -18,6 +18,9 @@ val pointer_stmt_table : Clang_ast_t.stmt IInt.Hash.t
 val pointer_type_table : Clang_ast_t.c_type IInt.Hash.t
 (** map pointer to its type *)
 
+val enum_constant_to_enum_table : Clang_ast_t.decl IInt.Hash.t
+(** maps enum constant pointer to the declaration of its enum *)
+
 val populate_all_tables : Clang_ast_t.decl -> unit
 (** discover what pointers should point to in the tables above; should be run once for the current
     toplevel decl *)

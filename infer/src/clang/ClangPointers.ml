@@ -17,6 +17,8 @@ let pointer_stmt_table = IInt.Hash.create 256
 
 let pointer_type_table = IInt.Hash.create 256
 
+let enum_constant_to_enum_table = IInt.Hash.create 256
+
 let empty_v = Clang_ast_visit.empty_visitor
 
 (* This function is not thread-safe *)
@@ -64,6 +66,10 @@ let process_decl _ decl =
   | Clang_ast_t.ObjCPropertyDecl (_, _, {opdi_ivar_decl= Some decl_ref}) ->
       let ivar_pointer = decl_ref.Clang_ast_t.dr_decl_pointer in
       IInt.Hash.replace ivar_to_property_table ivar_pointer decl
+  | Clang_ast_t.EnumDecl (_, _, _, constants, _, _, _) ->
+      List.iter constants ~f:(fun constant ->
+          let constant_pointer = (Clang_ast_proj.get_decl_tuple constant).Clang_ast_t.di_pointer in
+          IInt.Hash.replace enum_constant_to_enum_table constant_pointer decl )
   | _ ->
       ()
 
@@ -117,6 +123,7 @@ let reset_cache () =
   IInt.Hash.clear pointer_stmt_table ;
   IInt.Hash.clear pointer_type_table ;
   IInt.Hash.clear ivar_to_property_table ;
+  IInt.Hash.clear enum_constant_to_enum_table ;
   reset_sloc previous_sloc
 
 

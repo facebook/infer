@@ -269,10 +269,11 @@ module Variables = struct
 
   type acc =
     { map: CContext.var_to_destroy list ClangPointers.Map.t
-    ; gotos: (Clang_ast_t.pointer * string * CContext.var_to_destroy list) list
-          (** [goto] statements with the name of their label and the variables in scope at the
-              [goto] *)
-    ; labels: VarToDestroySet.t IString.Map.t  (** variables in scope at each label *) }
+    ; gotos: (Clang_ast_t.pointer * Clang_ast_t.pointer * CContext.var_to_destroy list) list
+          (** [goto] statements with the pointer of the [LabelDecl] of their label and the variables
+              in scope at the [goto] *)
+    ; labels: VarToDestroySet.t ClangPointers.Map.t
+          (** variables in scope at each label, by the pointer of its [LabelDecl] *) }
 
   let rec visit_stmt context stmt ((scope, acc) as scope_acc) =
     L.debug Capture Verbose "%a{%a}@;"
@@ -293,15 +294,15 @@ module Variables = struct
           vars_to_destroy ;
         let map = ClangPointers.Map.add stmt_info.Clang_ast_t.si_pointer vars_to_destroy acc.map in
         (scope, {acc with map})
-    | `GotoStmt (stmt_info, _, {gsi_label}) ->
+    | `GotoStmt (stmt_info, _, {gsi_pointer}) ->
         (* the label may not have been visited yet, see [add_gotos_to_map] *)
         let goto =
-          (stmt_info.Clang_ast_t.si_pointer, gsi_label, collect_until InitialScope scope)
+          (stmt_info.Clang_ast_t.si_pointer, gsi_pointer, collect_until InitialScope scope)
         in
         (scope, {acc with gotos= goto :: acc.gotos})
-    | `LabelStmt (_, stmt_list, label) ->
+    | `LabelStmt (_, stmt_list, {lsi_pointer}) ->
         let in_scope = collect_until InitialScope scope |> VarToDestroySet.of_list in
-        let labels = IString.Map.add label in_scope acc.labels in
+        let labels = ClangPointers.Map.add lsi_pointer in_scope acc.labels in
         visit_stmt_list context stmt_list (scope, {acc with labels})
     | `LambdaExpr (_, stmt_list, _, _) ->
         (* the body of the lambda, its last child, is translated as a separate procedure, with its
@@ -379,7 +380,7 @@ module Variables = struct
       declarations. *)
   let add_gotos_to_map {map; gotos; labels} =
     List.fold gotos ~init:map ~f:(fun map (pointer, label, in_scope_at_goto) ->
-        match IString.Map.find_opt label labels with
+        match ClangPointers.Map.find_opt label labels with
         | None ->
             map
         | Some in_scope_at_label ->
@@ -387,7 +388,7 @@ module Variables = struct
               List.filter in_scope_at_goto ~f:(fun var ->
                   not (VarToDestroySet.mem var in_scope_at_label) )
             in
-            L.debug Capture Verbose "~[%d:goto %s:%a]@\n" pointer label
+            L.debug Capture Verbose "~[%d:goto %d:%a]@\n" pointer label
               (Pp.seq ~sep:"," CContext.pp_var_to_destroy)
               vars_to_destroy ;
             ClangPointers.Map.add pointer vars_to_destroy map )
@@ -396,7 +397,7 @@ module Variables = struct
   let empty_scope = {current= []; current_kind= InitialScope; outers= []}
 
   let compute_vars_to_destroy_map context body =
-    let acc = {map= ClangPointers.Map.empty; gotos= []; labels= IString.Map.empty} in
+    let acc = {map= ClangPointers.Map.empty; gotos= []; labels= ClangPointers.Map.empty} in
     let map = visit_stmt context body (empty_scope, acc) |> snd |> add_gotos_to_map in
     L.debug Capture Verbose "@\n" ;
     map

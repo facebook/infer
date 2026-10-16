@@ -190,3 +190,21 @@ void cleanup_goto_after_reset_ok(int b) {
 out:
   return;
 }
+
+#define SKIP_IF(cond, stmt) \
+  do {                      \
+    __label__ skip;         \
+    if (cond) {             \
+      goto skip;            \
+    }                       \
+    stmt;                   \
+  skip:;                    \
+  } while (0)
+
+void cleanup_local_labels_with_same_name_ok(int b) {
+  {
+    __attribute__((cleanup(cleanup_int))) int* x = malloc(sizeof(int));
+    SKIP_IF(b, b++);
+  }
+  SKIP_IF(b, b++);
+}

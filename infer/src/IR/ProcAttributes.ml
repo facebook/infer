@@ -128,6 +128,9 @@ type t =
   ; loc_instantiated: Location.t option  (** location of this procedure is possibly instantiated *)
   ; translation_unit: SourceFile.t  (** translation unit to which the procedure belongs *)
   ; mutable locals: var_data list  (** name, type and attributes of local variables *)
+  ; mutable globals: (Pvar.t * Typ.t) list
+        (** global variables of array or struct type, including static locals, referenced in the
+            procedure, with their declared types; only recorded by the clang frontend *)
   ; objc_accessor: objc_accessor_type option  (** type of ObjC accessor, if any *)
   ; proc_name: Procname.t  (** name of the procedure *)
   ; ret_type: Typ.t  (** return type *)
@@ -212,6 +215,7 @@ let default translation_unit proc_name =
   ; loc_instantiated= None
   ; translation_unit
   ; locals= []
+  ; globals= []
   ; has_added_return_param= false
   ; objc_accessor= None
   ; proc_name
@@ -266,6 +270,7 @@ let pp f
      ; loc_instantiated
      ; translation_unit
      ; locals
+     ; globals
      ; has_added_return_param
      ; objc_accessor
      ; proc_name
@@ -350,6 +355,11 @@ let pp f
   Option.iter loc_instantiated ~f:(fun loc_instantiated ->
       F.fprintf f "; loc_instantiated= %a@," Location.pp_file_pos loc_instantiated ) ;
   F.fprintf f "; locals= [@[%a@]]@," (Pp.semicolon_seq ~print_env:Pp.text_break pp_var_data) locals ;
+  if not (List.is_empty globals) then
+    F.fprintf f "; globals= [@[%a@]]@,"
+      (Pp.semicolon_seq ~print_env:Pp.text_break (fun f (pvar, typ) ->
+           F.fprintf f "%a:%a" (Pvar.pp Pp.text) pvar (Typ.pp_full Pp.text) typ ) )
+      globals ;
   pp_bool_default ~default:default.has_added_return_param "has_added_return_param"
     has_added_return_param f () ;
   if not ([%equal: objc_accessor_type option] default.objc_accessor objc_accessor) then

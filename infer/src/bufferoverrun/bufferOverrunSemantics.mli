@@ -10,8 +10,9 @@ open! IStd
 val is_stack_exp : Exp.t -> BufferOverrunDomain.Mem.t -> bool
 (** Check if an expression is a stack variable such as [n$0] or local variable for C array *)
 
-val eval : IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
-(** Evalute an expression *)
+val eval :
+  ?typ:Typ.t -> IntegerWidths.t -> Exp.t -> BufferOverrunDomain.Mem.t -> BufferOverrunDomain.Val.t
+(** Evalute an expression, of type [typ] if known *)
 
 val eval_locs : Exp.t -> BufferOverrunDomain.Mem.t -> AbsLoc.PowLoc.t
 (** [eval_locs exp mem] is like [eval exp mem |> Val.get_all_locs] but takes some shortcuts to avoid

@@ -1,0 +1,196 @@
+/* @generated */
+digraph cfg {
+"call_if_constexpr_template#816697.755d39639d3023bc_1" [label="1: Start call_if_constexpr_template\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "call_if_constexpr_template#816697.755d39639d3023bc_1" -> "call_if_constexpr_template#816697.755d39639d3023bc_3" ;
+"call_if_constexpr_template#816697.755d39639d3023bc_2" [label="2: Exit call_if_constexpr_template \n  " color=yellow style=filled]
+	
+
+"call_if_constexpr_template#816697.755d39639d3023bc_3" [label="3:  Return Stmt \n   n$0=_fun_if_constexpr_template<3>() [line 25, column 43]\n " shape="box"]
+	
+
+	 "call_if_constexpr_template#816697.755d39639d3023bc_3" -> "call_if_constexpr_template#816697.755d39639d3023bc_4" ;
+"call_if_constexpr_template#816697.755d39639d3023bc_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 25, column 36]\n " shape="box"]
+	
+
+	 "call_if_constexpr_template#816697.755d39639d3023bc_4" -> "call_if_constexpr_template#816697.755d39639d3023bc_2" ;
+"case_label_constant#1738437561793.083de2c70384eedf_1" [label="1: Start case_label_constant\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "case_label_constant#1738437561793.083de2c70384eedf_1" -> "case_label_constant#1738437561793.083de2c70384eedf_3" ;
+"case_label_constant#1738437561793.083de2c70384eedf_2" [label="2: Exit case_label_constant \n  " color=yellow style=filled]
+	
+
+"case_label_constant#1738437561793.083de2c70384eedf_3" [label="3:  SwitchStmt \n   n$0=*&x:int [line 67, column 11]\n " shape="box"]
+	
+
+	 "case_label_constant#1738437561793.083de2c70384eedf_3" -> "case_label_constant#1738437561793.083de2c70384eedf_6" ;
+	 "case_label_constant#1738437561793.083de2c70384eedf_3" -> "case_label_constant#1738437561793.083de2c70384eedf_7" ;
+"case_label_constant#1738437561793.083de2c70384eedf_4" [label="4:  Return Stmt \n   *&return:int=0 [line 71, column 7]\n " shape="box"]
+	
+
+	 "case_label_constant#1738437561793.083de2c70384eedf_4" -> "case_label_constant#1738437561793.083de2c70384eedf_2" ;
+"case_label_constant#1738437561793.083de2c70384eedf_5" [label="5:  Return Stmt \n   *&return:int=1 [line 69, column 7]\n " shape="box"]
+	
+
+	 "case_label_constant#1738437561793.083de2c70384eedf_5" -> "case_label_constant#1738437561793.083de2c70384eedf_2" ;
+"case_label_constant#1738437561793.083de2c70384eedf_6" [label="6: Prune (true branch, switch) \n   PRUNE((n$0 == 4), true); [line 68, column 5]\n " shape="invhouse"]
+	
+
+	 "case_label_constant#1738437561793.083de2c70384eedf_6" -> "case_label_constant#1738437561793.083de2c70384eedf_5" ;
+"case_label_constant#1738437561793.083de2c70384eedf_7" [label="7: Prune (false branch, switch) \n   PRUNE(!(n$0 == 4), false); [line 68, column 5]\n " shape="invhouse"]
+	
+
+	 "case_label_constant#1738437561793.083de2c70384eedf_7" -> "case_label_constant#1738437561793.083de2c70384eedf_4" ;
+"if_constexpr_condition_variable#1.60413ed16c3f5236_1" [label="1: Start if_constexpr_condition_variable\nFormals:  x:int\nLocals:  n:int const  \n  " color=yellow style=filled]
+	
+
+	 "if_constexpr_condition_variable#1.60413ed16c3f5236_1" -> "if_constexpr_condition_variable#1.60413ed16c3f5236_6" ;
+"if_constexpr_condition_variable#1.60413ed16c3f5236_2" [label="2: Exit if_constexpr_condition_variable \n  " color=yellow style=filled]
+	
+
+"if_constexpr_condition_variable#1.60413ed16c3f5236_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 63, column 10]\n " shape="box"]
+	
+
+	 "if_constexpr_condition_variable#1.60413ed16c3f5236_3" -> "if_constexpr_condition_variable#1.60413ed16c3f5236_4" ;
+"if_constexpr_condition_variable#1.60413ed16c3f5236_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 63, column 3]\n " shape="box"]
+	
+
+	 "if_constexpr_condition_variable#1.60413ed16c3f5236_4" -> "if_constexpr_condition_variable#1.60413ed16c3f5236_2" ;
+"if_constexpr_condition_variable#1.60413ed16c3f5236_5" [label="5:  BinaryOperatorStmt: AddAssign \n   n$1=*&n:int [line 61, column 10]\n  n$2=*&x:int [line 61, column 5]\n  *&x:int=(n$2 + n$1) [line 61, column 5]\n " shape="box"]
+	
+
+	 "if_constexpr_condition_variable#1.60413ed16c3f5236_5" -> "if_constexpr_condition_variable#1.60413ed16c3f5236_3" ;
+"if_constexpr_condition_variable#1.60413ed16c3f5236_6" [label="6:  DeclStmt \n   VARIABLE_DECLARED(n:int const ); [line 60, column 17]\n  *&n:int const =sizeof(t=int;nbytes=4;nullable=false) [line 60, column 17]\n " shape="box"]
+	
+
+	 "if_constexpr_condition_variable#1.60413ed16c3f5236_6" -> "if_constexpr_condition_variable#1.60413ed16c3f5236_5" ;
+"if_constexpr_false_no_else#182103.6f68316f4df3dc49_1" [label="1: Start if_constexpr_false_no_else\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "if_constexpr_false_no_else#182103.6f68316f4df3dc49_1" -> "if_constexpr_false_no_else#182103.6f68316f4df3dc49_3" ;
+"if_constexpr_false_no_else#182103.6f68316f4df3dc49_2" [label="2: Exit if_constexpr_false_no_else \n  " color=yellow style=filled]
+	
+
+"if_constexpr_false_no_else#182103.6f68316f4df3dc49_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 39, column 10]\n " shape="box"]
+	
+
+	 "if_constexpr_false_no_else#182103.6f68316f4df3dc49_3" -> "if_constexpr_false_no_else#182103.6f68316f4df3dc49_4" ;
+"if_constexpr_false_no_else#182103.6f68316f4df3dc49_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 39, column 3]\n " shape="box"]
+	
+
+	 "if_constexpr_false_no_else#182103.6f68316f4df3dc49_4" -> "if_constexpr_false_no_else#182103.6f68316f4df3dc49_2" ;
+"if_constexpr_init_statement#12565.70e817d4dccacc30_1" [label="1: Start if_constexpr_init_statement\nFormals:  x:int\nLocals:  g:Guard \n  " color=yellow style=filled]
+	
+
+	 "if_constexpr_init_statement#12565.70e817d4dccacc30_1" -> "if_constexpr_init_statement#12565.70e817d4dccacc30_7" ;
+"if_constexpr_init_statement#12565.70e817d4dccacc30_2" [label="2: Exit if_constexpr_init_statement \n  " color=yellow style=filled]
+	
+
+"if_constexpr_init_statement#12565.70e817d4dccacc30_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 56, column 10]\n " shape="box"]
+	
+
+	 "if_constexpr_init_statement#12565.70e817d4dccacc30_3" -> "if_constexpr_init_statement#12565.70e817d4dccacc30_4" ;
+"if_constexpr_init_statement#12565.70e817d4dccacc30_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 56, column 3]\n " shape="box"]
+	
+
+	 "if_constexpr_init_statement#12565.70e817d4dccacc30_4" -> "if_constexpr_init_statement#12565.70e817d4dccacc30_2" ;
+"if_constexpr_init_statement#12565.70e817d4dccacc30_5" [label="5:  Destruction(Scope) \n   _=*&g:Guard [line 55, column 3]\n  n$2=_fun_Guard::~Guard(&g:Guard*) injected [line 55, column 3]\n " shape="box"]
+	
+
+	 "if_constexpr_init_statement#12565.70e817d4dccacc30_5" -> "if_constexpr_init_statement#12565.70e817d4dccacc30_3" ;
+"if_constexpr_init_statement#12565.70e817d4dccacc30_6" [label="6:  UnaryOperator \n   n$4=*&x:int [line 54, column 5]\n  *&x:int=(n$4 + 1) [line 54, column 5]\n " shape="box"]
+	
+
+	 "if_constexpr_init_statement#12565.70e817d4dccacc30_6" -> "if_constexpr_init_statement#12565.70e817d4dccacc30_5" ;
+"if_constexpr_init_statement#12565.70e817d4dccacc30_7" [label="7:  DeclStmt \n   VARIABLE_DECLARED(g:Guard); [line 53, column 17]\n  n$5=_fun_Guard::Guard(&g:Guard*) [line 53, column 23]\n " shape="box"]
+	
+
+	 "if_constexpr_init_statement#12565.70e817d4dccacc30_7" -> "if_constexpr_init_statement#12565.70e817d4dccacc30_6" ;
+"if_constexpr_non_template#1274548.1cb7e7f017ed0141_1" [label="1: Start if_constexpr_non_template\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "if_constexpr_non_template#1274548.1cb7e7f017ed0141_1" -> "if_constexpr_non_template#1274548.1cb7e7f017ed0141_3" ;
+"if_constexpr_non_template#1274548.1cb7e7f017ed0141_2" [label="2: Exit if_constexpr_non_template \n  " color=yellow style=filled]
+	
+
+"if_constexpr_non_template#1274548.1cb7e7f017ed0141_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 29, column 12]\n " shape="box"]
+	
+
+	 "if_constexpr_non_template#1274548.1cb7e7f017ed0141_3" -> "if_constexpr_non_template#1274548.1cb7e7f017ed0141_4" ;
+"if_constexpr_non_template#1274548.1cb7e7f017ed0141_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 29, column 5]\n " shape="box"]
+	
+
+	 "if_constexpr_non_template#1274548.1cb7e7f017ed0141_4" -> "if_constexpr_non_template#1274548.1cb7e7f017ed0141_2" ;
+"if_constexpr_single_statement_bra.c6c1ea698b33ef27_1" [label="1: Start if_constexpr_single_statement_branches\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "if_constexpr_single_statement_bra.c6c1ea698b33ef27_1" -> "if_constexpr_single_statement_bra.c6c1ea698b33ef27_5" ;
+"if_constexpr_single_statement_bra.c6c1ea698b33ef27_2" [label="2: Exit if_constexpr_single_statement_branches \n  " color=yellow style=filled]
+	
+
+"if_constexpr_single_statement_bra.c6c1ea698b33ef27_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 49, column 10]\n " shape="box"]
+	
+
+	 "if_constexpr_single_statement_bra.c6c1ea698b33ef27_3" -> "if_constexpr_single_statement_bra.c6c1ea698b33ef27_4" ;
+"if_constexpr_single_statement_bra.c6c1ea698b33ef27_4" [label="4:  Return Stmt \n   *&return:int=n$0 [line 49, column 3]\n " shape="box"]
+	
+
+	 "if_constexpr_single_statement_bra.c6c1ea698b33ef27_4" -> "if_constexpr_single_statement_bra.c6c1ea698b33ef27_2" ;
+"if_constexpr_single_statement_bra.c6c1ea698b33ef27_5" [label="5:  BinaryOperatorStmt: Assign \n   *&x:int=4 [line 46, column 5]\n " shape="box"]
+	
+
+	 "if_constexpr_single_statement_bra.c6c1ea698b33ef27_5" -> "if_constexpr_single_statement_bra.c6c1ea698b33ef27_3" ;
+"if_constexpr_template<3>#16583433.4be1dfde617b55f5_1" [label="1: Start if_constexpr_template<3>\nFormals: \nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "if_constexpr_template<3>#16583433.4be1dfde617b55f5_1" -> "if_constexpr_template<3>#16583433.4be1dfde617b55f5_3" ;
+"if_constexpr_template<3>#16583433.4be1dfde617b55f5_2" [label="2: Exit if_constexpr_template<3> \n  " color=yellow style=filled]
+	
+
+"if_constexpr_template<3>#16583433.4be1dfde617b55f5_3" [label="3:  Return Stmt \n   *&return:int=3 [line 19, column 5]\n " shape="box"]
+	
+
+	 "if_constexpr_template<3>#16583433.4be1dfde617b55f5_3" -> "if_constexpr_template<3>#16583433.4be1dfde617b55f5_2" ;
+"twice#7872010149908086292.7f8b3ea7c0f79ed0_1" [label="1: Start twice\nFormals:  x:int\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "twice#7872010149908086292.7f8b3ea7c0f79ed0_1" -> "twice#7872010149908086292.7f8b3ea7c0f79ed0_3" ;
+"twice#7872010149908086292.7f8b3ea7c0f79ed0_2" [label="2: Exit twice \n  " color=yellow style=filled]
+	
+
+"twice#7872010149908086292.7f8b3ea7c0f79ed0_3" [label="3:  Return Stmt \n   n$0=*&x:int [line 12, column 41]\n " shape="box"]
+	
+
+	 "twice#7872010149908086292.7f8b3ea7c0f79ed0_3" -> "twice#7872010149908086292.7f8b3ea7c0f79ed0_4" ;
+"twice#7872010149908086292.7f8b3ea7c0f79ed0_4" [label="4:  Return Stmt \n   *&return:int=(2 * n$0) [line 12, column 30]\n " shape="box"]
+	
+
+	 "twice#7872010149908086292.7f8b3ea7c0f79ed0_4" -> "twice#7872010149908086292.7f8b3ea7c0f79ed0_2" ;
+"Guard#Guard#{18270379399047292316.102971ee024ba946_1" [label="1: Start Guard::Guard\nFormals:  this:Guard*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "Guard#Guard#{18270379399047292316.102971ee024ba946_1" -> "Guard#Guard#{18270379399047292316.102971ee024ba946_2" ;
+"Guard#Guard#{18270379399047292316.102971ee024ba946_2" [label="2: Exit Guard::Guard \n  " color=yellow style=filled]
+	
+
+"__infer_inner_destructor_~Guard#G.a11951153234ff6e_1" [label="1: Start Guard::__infer_inner_destructor_~Guard\nFormals:  this:Guard*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "__infer_inner_destructor_~Guard#G.a11951153234ff6e_1" -> "__infer_inner_destructor_~Guard#G.a11951153234ff6e_2" ;
+"__infer_inner_destructor_~Guard#G.a11951153234ff6e_2" [label="2: Exit Guard::__infer_inner_destructor_~Guard \n  " color=yellow style=filled]
+	
+
+"~Guard#Guard#(2123778645303880203.df58fa62633fdfe2_1" [label="1: Start Guard::~Guard\nFormals:  this:Guard*\nLocals:  \n  " color=yellow style=filled]
+	
+
+	 "~Guard#Guard#(2123778645303880203.df58fa62633fdfe2_1" -> "~Guard#Guard#(2123778645303880203.df58fa62633fdfe2_3" ;
+"~Guard#Guard#(2123778645303880203.df58fa62633fdfe2_2" [label="2: Exit Guard::~Guard \n  " color=yellow style=filled]
+	
+
+"~Guard#Guard#(2123778645303880203.df58fa62633fdfe2_3" [label="3:  Destruction(virtual base) \n   n$0=*&this:Guard* [line 9, column 13]\n  _=*n$0:Guard [line 9, column 13]\n  n$2=_fun_Guard::__infer_inner_destructor_~Guard(n$0:Guard*) injected [line 9, column 13]\n " shape="box"]
+	
+
+	 "~Guard#Guard#(2123778645303880203.df58fa62633fdfe2_3" -> "~Guard#Guard#(2123778645303880203.df58fa62633fdfe2_2" ;
+}

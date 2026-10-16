@@ -150,8 +150,32 @@ let set_array_stride integer_type_widths typ v =
       v
 
 
-let rec eval : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
- fun integer_type_widths exp mem ->
+(** whether [exp] is a row [g[i]...[j]] of a global array [g] that decays to a pointer to its first
+    element; the frontend writes [&g[i]] as [g[i]] too, which [typ], the type of [exp] if known,
+    tells apart *)
+let is_decayed_row_of_global_array ?typ exp mem =
+  let rec elt_typ_of_global_array : Exp.t -> Typ.t option = function
+    | Lvar pvar ->
+        Mem.typ_of_global_array pvar mem
+    | Lindex (e, _) -> (
+      match elt_typ_of_global_array e with Some {desc= Tarray {elt}} -> Some elt | _ -> None )
+    | _ ->
+        None
+  in
+  let rec array_depth (t : Typ.t) =
+    match t.desc with Tarray {elt} -> 1 + array_depth elt | _ -> 0
+  in
+  match (elt_typ_of_global_array exp, typ) with
+  | Some ({desc= Tarray _} as row), Some {Typ.desc= Tptr (pointee, Pk_pointer)} ->
+      array_depth pointee < array_depth row
+  | Some {desc= Tarray _}, _ ->
+      true
+  | _, _ ->
+      false
+
+
+let rec eval : ?typ:Typ.t -> IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
+ fun ?typ integer_type_widths exp mem ->
   if (not (Language.curr_language_is Java)) && must_alias_cmp exp mem then Val.Itv.zero
   else
     match exp with
@@ -163,7 +187,7 @@ let rec eval : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
     | Exp.UnOp (uop, e, _) ->
         eval_unop integer_type_widths uop e mem
     | Exp.BinOp (bop, e1, e2) -> (
-        let v = eval_binop integer_type_widths bop e1 e2 mem in
+        let v = eval_binop ?typ integer_type_widths bop e1 e2 mem in
         match bop with
         | Binop.(PlusA _ | MinusA _ | MinusPP) ->
             Val.set_itv_updated_by_addition v
@@ -174,7 +198,7 @@ let rec eval : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
     | Exp.Const c ->
         eval_const integer_type_widths c
     | Exp.Cast (t, e) ->
-        let v = eval integer_type_widths e mem in
+        let v = eval ~typ:t integer_type_widths e mem in
         let v = set_array_stride integer_type_widths t v in
         if Typ.is_unsigned_int t && Val.is_mone v then
           (* We treat "(unsigned int)-1" case specially, because programmers often exploit it to get
@@ -187,7 +211,9 @@ let rec eval : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
         let locs = Val.get_all_locs v |> PowLoc.append_field ~fn in
         Val.of_pow_loc locs ~traces:(Val.get_traces v)
     | Exp.Lindex (e1, e2) ->
-        eval_lindex integer_type_widths e1 e2 mem
+        let v = eval_lindex integer_type_widths e1 e2 mem in
+        if is_decayed_row_of_global_array ?typ exp mem then Mem.find_set (Val.get_all_locs v) mem
+        else v
     | Exp.Sizeof {nbytes= Some size} ->
         Val.of_int size
     | Exp.Sizeof {nbytes= None} ->
@@ -197,7 +223,13 @@ let rec eval : IntegerWidths.t -> Exp.t -> Mem.t -> Val.t =
 
 
 and eval_lindex integer_type_widths array_exp index_exp mem =
-  let array_v = eval integer_type_widths array_exp mem in
+  let array_v =
+    match array_exp with
+    | Exp.Lindex (e1, e2) ->
+        eval_lindex integer_type_widths e1 e2 mem
+    | _ ->
+        eval integer_type_widths array_exp mem
+  in
   if ArrayBlk.is_bot (Val.get_array_blk array_v) then
     match array_exp with
     | Exp.Lfield _ ->
@@ -230,9 +262,15 @@ and eval_unop : IntegerWidths.t -> Unop.t -> Exp.t -> Mem.t -> Val.t =
   match unop with Unop.Neg -> Val.neg v | Unop.BNot -> Val.unknown_bit v | Unop.LNot -> Val.lnot v
 
 
-and eval_binop : IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Val.t =
- fun integer_type_widths binop e1 e2 mem ->
-  let v1 = eval integer_type_widths e1 mem in
+and eval_binop : ?typ:Typ.t -> IntegerWidths.t -> Binop.t -> Exp.t -> Exp.t -> Mem.t -> Val.t =
+ fun ?typ integer_type_widths binop e1 e2 mem ->
+  let v1 =
+    match binop with
+    | Binop.(PlusPI | MinusPI) ->
+        eval ?typ integer_type_widths e1 mem
+    | _ ->
+        eval integer_type_widths e1 mem
+  in
   let v2 = eval integer_type_widths e2 mem in
   match (binop : Binop.t) with
   | PlusA _ ->
@@ -288,7 +326,8 @@ let rec eval_locs : Exp.t -> Mem.t -> PowLoc.t =
       Mem.find_stack (Var.of_id id |> Loc.of_var) mem |> Val.get_all_locs
   | Lvar pvar ->
       let loc = Loc.of_pvar pvar in
-      if Mem.is_stack_loc loc mem then Mem.find loc mem |> Val.get_all_locs
+      if Mem.is_stack_loc loc mem || Option.is_some (Mem.typ_of_global_array pvar mem) then
+        Mem.find loc mem |> Val.get_all_locs
       else PowLoc.singleton loc
   | BinOp ((Binop.MinusPI | Binop.PlusPI), e, _) | Cast (_, e) ->
       eval_locs e mem
@@ -463,9 +502,10 @@ and eval_locpath ~mode params p mem =
   in
   if PowLoc.is_bot res then (
     match mode with
-    | EvalPOReachability ->
+    (* the contents of a global that a caller cannot evaluate are unknown, not unreachable *)
+    | EvalPOReachability when not (Symb.SymbolPath.is_global_partial p) ->
         res
-    | EvalNormal | EvalPOCond | EvalCost ->
+    | EvalNormal | EvalPOCond | EvalPOReachability | EvalCost ->
         L.d_printfln_escaped "Location value for %a is not found." Symb.SymbolPath.pp_partial p ;
         PowLoc.unknown )
   else res
@@ -503,12 +543,12 @@ let mk_eval_sym_trace ?(is_args_ref = false) integer_type_widths
           in
           this_actual :: actuals
     else
-      List.map actual_exps ~f:(fun (a, _) ->
+      List.map actual_exps ~f:(fun (a, typ) ->
           match (a : Exp.t) with
           | Closure closure ->
               FuncPtr.Set.of_closure closure |> Val.of_func_ptrs
           | _ ->
-              eval integer_type_widths a caller_mem )
+              eval ~typ integer_type_widths a caller_mem )
   in
   let params =
     ParamBindings.make callee_formals actuals
