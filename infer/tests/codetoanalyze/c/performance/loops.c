@@ -71,6 +71,17 @@ void loop_use_global_vars(int x) {
   }
 }
 
+static int global_fds[2] = {-1, -1};
+
+void set_global_fd(int fd) { global_fds[0] = fd; }
+
+void loop_if_global_fd_set_linear(int n) {
+  if (global_fds[0] != -1) {
+    for (int i = 0; i < n; i++) {
+    }
+  }
+}
+
 void ptr_cmp(char* end, int size) {
   char buf[2] = "hi";
   for (int i = 0; i < size; i += 2) {
