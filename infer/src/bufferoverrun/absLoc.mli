@@ -105,6 +105,8 @@ module Loc : sig
 
   val is_unknown : t -> bool
 
+  val is_c_strlen : t -> bool
+
   val represents_multiple_values : t -> bool
 
   val is_objc_collection_internal_array : t -> bool
@@ -148,6 +150,9 @@ module PowLoc : sig
 
   val of_c_strlen : t -> t
   (** It appends the [strlen] field. *)
+
+  val remove_unknown : t -> t
+  (** It removes the unknown location. *)
 
   val unknown : t
 

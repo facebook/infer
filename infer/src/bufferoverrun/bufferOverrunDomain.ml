@@ -576,14 +576,17 @@ module Val = struct
       let traces = traces_of_loc l in
       let arrayblk =
         let allocsite = Allocsite.make_symbol deref_path in
+        let is_void = Typ.is_pointer_to_void typ in
         let stride =
           match elt with
           | Some {Typ.desc= Tint ikind} ->
-              Itv.of_int (IntegerWidths.width_of_ikind integer_type_widths ikind)
+              Itv.of_int (IntegerWidths.width_of_ikind integer_type_widths ikind / 8)
+          | _ when is_void ->
+              Itv.one
           | _ ->
+              (* casts to pointers to integers recount the offset and length in bytes *)
               Itv.nat
         in
-        let is_void = Typ.is_pointer_to_void typ in
         let offset =
           if SPath.is_cpp_vector_elem path then Itv.zero else Itv.of_offset_path ~is_void path
         in
