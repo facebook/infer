@@ -12,9 +12,11 @@ type std_vector_function =
   | Clear
   | Emplace
   | EmplaceBack
+  | Erase
   | Insert
   | PushBack
   | Reserve
+  | Resize
   | ShrinkToFit
 [@@deriving compare, equal, yojson_of]
 
@@ -27,12 +29,16 @@ let pp_std_vector_function f = function
       F.fprintf f "std::vector::emplace"
   | EmplaceBack ->
       F.fprintf f "std::vector::emplace_back"
+  | Erase ->
+      F.fprintf f "std::vector::erase"
   | Insert ->
       F.fprintf f "std::vector::insert"
   | PushBack ->
       F.fprintf f "std::vector::push_back"
   | Reserve ->
       F.fprintf f "std::vector::reserve"
+  | Resize ->
+      F.fprintf f "std::vector::resize"
   | ShrinkToFit ->
       F.fprintf f "std::vector::shrink_to_fit"
 

@@ -346,9 +346,6 @@ let matchers : matcher list =
     $--> copy_assignment ~desc:"folly::Optional::assign(folly::Optional<Value> arg)"
   ; -"folly" &:: "Optional" &:: "assign"
     &++> assign_value ~desc:"folly::Optional::assign(Value arg)"
-  ; -"folly" &:: "Optional" &:: "emplace<>" $ capt_arg_payload
-    $+...$--> emplace ~desc:"folly::Optional::emplace()"
-    |> with_non_disj
   ; -"folly" &:: "Optional" &:: "emplace" $ capt_arg_payload
     $+...$--> emplace ~desc:"folly::Optional::emplace()"
     |> with_non_disj
@@ -396,9 +393,6 @@ let matchers : matcher list =
     $--> copy_assignment ~desc:"std::optional::operator=(std::optional<Value> arg)"
   ; -"std" &:: "optional" &:: "operator="
     &++> assign_value ~desc:"std::optional::operator=(Value arg)"
-  ; -"std" &:: "optional" &:: "emplace<>" $ capt_arg_payload
-    $+...$--> emplace ~desc:"std::optional::emplace()"
-    |> with_non_disj
   ; -"std" &:: "optional" &:: "emplace" $ capt_arg_payload
     $+...$--> emplace ~desc:"std::optional::emplace()"
     |> with_non_disj
