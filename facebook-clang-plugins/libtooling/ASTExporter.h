@@ -2143,21 +2143,30 @@ int ASTExporter<ATDWriter>::BindingDeclTupleSize() {
 //@atd #define binding_decl_tuple value_decl_tuple * binding_decl_info
 //@atd type binding_decl_info = {
 //@atd  ?binding_var: var_decl_info option;
-//@atd  ?bound_decl_type: qual_type option;
+//@atd  ?decomposed_decl: pointer option;
+//@atd  ?binding_expr: stmt option;
 //@atd }
 template <class ATDWriter>
 void ASTExporter<ATDWriter>::VisitBindingDecl(const BindingDecl *D) {
   VisitValueDecl(D);
   VarDecl *HV = D->getHoldingVar();
   const ValueDecl *BoundDecl = D->getDecomposedDecl();
-  ObjectScope oScope(OF, 0 + (bool)HV + (bool)BoundDecl);
+  // Without a holding variable (decomposition of an array, a vector, a complex
+  // number or a struct), the binding is a name for this expression: an element
+  // or a field of the decomposed object.
+  const Expr *BindingExpr = HV ? nullptr : D->getBinding();
+  ObjectScope oScope(OF, 0 + (bool)HV + (bool)BoundDecl + (bool)BindingExpr);
   if (HV) {
     OF.emitTag("binding_var");
     dumpVarDeclInfo(HV);
   }
   if (BoundDecl) {
-    OF.emitTag("bound_decl_type");
-    dumpQualType(BoundDecl->getType());
+    OF.emitTag("decomposed_decl");
+    dumpPointer(BoundDecl);
+  }
+  if (BindingExpr) {
+    OF.emitTag("binding_expr");
+    dumpStmt(BindingExpr);
   }
 }
 
