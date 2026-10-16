@@ -421,6 +421,108 @@ let%test_module "normalization" =
 
 let%test_module "variable elimination" =
   ( module struct
+    (* [IsInt] includes the range of [ikind], not just membership in Z. In particular,
+       existential projection must not treat a bounded integer as an unbounded witness. *)
+    let check_integer_projection ?(eliminated = []) ~keep phi ~feasible ~infeasible =
+      AnalysisGlobalState.restore global_state ;
+      let old_language = Language.get_language () in
+      Language.set_language Clang ;
+      Fun.protect
+        ~finally:(fun () -> Language.set_language old_language)
+        (fun () ->
+          let keep = AbstractValue.Set.of_list keep in
+          let phi = phi ttrue |> assert_sat in
+          let actual = AbstractValue.Set.choose keep in
+          let result = AbstractValue.mk_fresh () in
+          let fn = AbstractValue.mk_fresh () in
+          let phi, _ =
+            and_equal (AbstractValueOperand result)
+              (FunctionApplicationOperand {f= Unknown fn; actuals= [actual]})
+              phi
+            |> assert_sat
+          in
+          let phi =
+            forget_function_applications phi ~f:(AbstractValue.equal actual) ~keep_pre:(fun _ ->
+                true )
+          in
+          let summary, _, _ =
+            PulseFormula.simplify ~precondition_vocabulary:keep ~keep phi |> assert_sat
+          in
+          let summary_vars =
+            PulseFormula.fold_variables summary ~init:Var.Set.empty ~f:(Fn.flip Var.Set.add)
+          in
+          List.iter eliminated ~f:(fun v -> assert (not (Var.Set.mem v summary_vars))) ;
+          (* Summary occurrence maps have been discarded. Rebuild them as a caller would before
+             testing assignments to the kept values. *)
+          let subst =
+            AbstractValue.Set.fold
+              (fun v subst -> Var.Map.add v (v, PulseValueHistory.epoch) subst)
+              keep Var.Map.empty
+          in
+          let _, phi, _ =
+            and_callee_formula ~default:PulseValueHistory.epoch ~subst ttrue ~callee:summary
+            |> assert_sat
+          in
+          ignore (feasible phi |> assert_sat) ;
+          match infeasible phi with Unsat _ -> () | Sat _ -> assert false )
+
+
+    let%test_unit "projection preserves integer sum range" =
+      check_integer_projection ~keep:[x_var; y_var]
+        (is_int x_var IInt && is_int y_var IInt && is_int z_var IInt && z = x + y)
+        ~feasible:(x = i 0 && y = i 2147483647)
+        ~infeasible:(x = i 1 && y = i 2147483647)
+
+
+    let%test_unit "projection removes a definition and preserves its range" =
+      check_integer_projection ~keep:[z_var] ~eliminated:[x_var]
+        (x = z + i 1 && is_int x_var IInt)
+        ~feasible:(z = i 2147483646)
+        ~infeasible:(z = i 2147483647)
+
+
+    let%test_unit "projection preserves bounded integer witnesses" =
+      check_integer_projection ~keep:[x_var]
+        (is_int z_var IInt && z > x)
+        ~feasible:(x = i 2147483646)
+        ~infeasible:(x = i 2147483647)
+
+
+    let%test_unit "projection preserves lower integer range" =
+      check_integer_projection ~keep:[x_var]
+        (is_int z_var IInt && z < x)
+        ~feasible:(x = i (-2147483647))
+        ~infeasible:(x = i (-2147483648))
+
+
+    let%test_unit "projection intersects translated integer ranges" =
+      check_integer_projection ~keep:[x_var]
+        (is_int y_var IInt && y = x + i 1 && is_int z_var IInt && z = x + i 2)
+        ~feasible:(x = i 2147483645)
+        ~infeasible:(x = i 2147483646)
+
+
+    let%test_unit "projection preserves divisibility" =
+      check_integer_projection ~keep:[y_var]
+        (is_int z_var IInt && y = i 2 * z)
+        ~feasible:(y = i 2)
+        ~infeasible:(y = i 1)
+
+
+    let%test_unit "projection preserves unsigned translated range" =
+      check_integer_projection ~keep:[x_var]
+        (is_int y_var IUShort && y = x + i 1 && is_int z_var IUShort && z = x + i 2)
+        ~feasible:(x = i 65533)
+        ~infeasible:(x = i 65534)
+
+
+    let%test_unit "projection intersects different integer kinds" =
+      check_integer_projection ~keep:[x_var]
+        (is_int y_var IShort && y = x + i 1 && is_int z_var IUShort && z = x + i 2)
+        ~feasible:(x = i (-2))
+        ~infeasible:(x = i (-3))
+
+
     let%expect_test _ =
       simplify ~keep:[x_var; y_var] (x = y) ;
       [%expect

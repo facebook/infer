@@ -245,3 +245,173 @@ void call_incr_deref_with_alias_good(void) {
   }
   x = *ptr;
 }
+
+struct counter {
+  int count;
+  int* data;
+};
+
+int unknown_read(const struct counter* c);
+
+void unknown_write(struct counter* c);
+
+void unknown_read_is_functional_ok(struct counter* c) {
+  int* p = NULL;
+  if (unknown_read(c) != unknown_read(c)) {
+    *p = 42;
+  }
+}
+
+void unknown_read_after_store_bad(struct counter* c) {
+  int before = unknown_read(c);
+  c->count++;
+  if (unknown_read(c) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+void unknown_read_after_unknown_write_bad(struct counter* c) {
+  int before = unknown_read(c);
+  unknown_write(c);
+  if (unknown_read(c) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+void known_write(struct counter* c) { c->count++; }
+
+void unknown_read_after_known_write_bad(struct counter* c) {
+  int before = unknown_read(c);
+  known_write(c);
+  if (unknown_read(c) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+void unknown_read_after_unrelated_store_ok(struct counter* c,
+                                           struct counter* other) {
+  int before = unknown_read(c);
+  other->count++;
+  if (unknown_read(c) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+void unknown_read_after_null_check_ok(struct counter* c) {
+  int before = unknown_read(c);
+  if (c->data == NULL) {
+    return;
+  }
+  if (unknown_read(c) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+int has_data(struct counter* c) {
+  if (c->data == NULL) {
+    return 0;
+  }
+  return 1;
+}
+
+void unknown_read_after_callee_null_check_ok(struct counter* c) {
+  int before = unknown_read(c);
+  has_data(c);
+  if (unknown_read(c) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+int read_counter(struct counter* c) { return unknown_read(c); }
+
+void unknown_read_through_callee_is_functional_ok(struct counter* c) {
+  int* p = NULL;
+  if (read_counter(c) != unknown_read(c)) {
+    *p = 42;
+  }
+}
+
+int reset_then_read_counter(struct counter* c) {
+  c->count = 0;
+  return unknown_read(c);
+}
+
+void unknown_read_after_callee_write_bad(struct counter* c) {
+  int before = unknown_read(c);
+  if (reset_then_read_counter(c) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+int drain_counter_then_deref_bad(struct counter* c) {
+  if (unknown_read(c) == 0) {
+    return 0;
+  }
+  while (unknown_read(c) != 0) {
+    c->count--;
+  }
+  int* p = NULL;
+  return *p;
+}
+
+int unknown_length(const char* s);
+
+void unknown_length_after_store_bad(char* s) {
+  char* end = s + 1; // [s] is now [end - 1] in the path condition
+  int before = unknown_length(s);
+  *s = 'a';
+  if (unknown_length(s) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+void call_unknown_write(struct counter* c) { unknown_write(c); }
+
+void unknown_read_after_callee_unknown_write_bad(struct counter* c) {
+  int before = unknown_read(c);
+  call_unknown_write(c);
+  if (unknown_read(c) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
+
+int* count_miss_or_get(struct counter* c) {
+  if (unknown_read(c) == 0) {
+    c->count++;
+    return NULL;
+  }
+  return &c->count;
+}
+
+void count_miss_or_get_after_check_ok(struct counter* c) {
+  if (unknown_read(c) != 0) {
+    *count_miss_or_get(c) = 42;
+  }
+}
+
+void count_miss_or_get_unguarded_latent(struct counter* c) {
+  *count_miss_or_get(c) = 42;
+}
+
+int read_then_decrement(struct counter* c) {
+  int r = unknown_read(c);
+  c->count--;
+  return r;
+}
+
+void read_then_decrement_is_functional_ok(struct counter* c) {
+  int before = unknown_read(c);
+  if (read_then_decrement(c) != before) {
+    int* p = NULL;
+    *p = 42;
+  }
+}
