@@ -54,16 +54,59 @@ let custom_alloc_not_null desc model_data astate =
     None model_data astate
 
 
+(* Give [new_block] fresh copies of the cells of [old_block] (reached through field and array
+   accesses) that hold the same values. The cells of [old_block] cannot be shared since [free]
+   invalidates them. *)
+let move_block_contents ~old_block ~new_block : unit DSL.model_monad =
+  let open DSL.Syntax in
+  let* {path; location} = get_data in
+  let rec copy_cells visited src dst astate =
+    AbductiveDomain.Memory.fold_edges src astate ~init:astate
+      ~f:(fun astate (access, ((v, hist) as v_hist)) ->
+        match (access : Access.t) with
+        | Dereference ->
+            AbductiveDomain.Memory.add_edge path dst access v_hist location astate
+        | FieldAccess _ | ArrayAccess _ ->
+            if AbstractValue.Set.mem v visited then astate
+            else
+              let cell = (AbstractValue.mk_fresh (), hist) in
+              AbductiveDomain.Memory.add_edge path dst access cell location astate
+              |> copy_cells (AbstractValue.Set.add v visited) v cell )
+  in
+  copy_cells (AbstractValue.Set.singleton old_block) old_block new_block |> exec_command
+
+
 (* A failed realloc returns NULL and leaves the original block allocated, so only the success case
    frees [pointer]. A zero [size] is not special-cased: C17 leaves it implementation-defined (glibc
-   and scudo free [pointer] and return NULL) and C23 makes it undefined. *)
+   and scudo free [pointer] and return NULL) and C23 makes it undefined.
+
+   The success case moves the contents of [pointer] to a new block that is different from
+   [pointer]. realloc may also grow the block in place and return [pointer] itself, but Pulse would
+   then merge the result with the freed [pointer] and consider both freed. *)
 let realloc_common ~null_case ~desc allocator pointer size : model =
   let open DSL.Syntax in
   start_named_model desc
   @@ fun () ->
+  let old_block = ValueOrigin.value pointer.FuncArg.arg_payload in
   let success =
-    lift_to_monad (free pointer)
-    @@> alloc_common_dsl ~null_case:false ~initialize:false allocator (Some size)
+    let* () = lift_to_monad (free pointer) in
+    let* old_block_is_null =
+      exec_pure_operation (fun astate -> PulseArithmetic.is_known_zero astate old_block)
+    in
+    let* new_block =
+      (* [free] splits on whether [pointer] is 0: realloc(NULL, size) is malloc(size), otherwise
+         the contents of the new block come from [pointer] *)
+      lift_to_monad_and_get_result
+        (alloc_common ~null_case:false ~initialize:(not old_block_is_null) ~desc allocator
+           (Some size) )
+    in
+    let* () =
+      PulseArithmetic.and_not_equal
+        (AbstractValueOperand (fst new_block))
+        (AbstractValueOperand old_block)
+      |> exec_partial_command
+    in
+    move_block_contents ~old_block ~new_block @@> assign_ret new_block
   in
   if null_case then disj [success; return_null_dsl] else success
 

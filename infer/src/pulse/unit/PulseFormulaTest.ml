@@ -601,6 +601,12 @@ let%test_module "inequalities" =
         conditions: {[a1+2] = 2}
         phi: var_eqs: a1=v6 && linear_eqs: a1 = 0 ∧ x = 2 && term_eqs: 0=a1∧2=x && intervals: a1=0 ∧ x=2
         |}]
+
+
+    let%expect_test "pruned disequality implied by a lower bound" =
+      test (x > i 0 && x <>. i 0) ;
+      [%expect
+        {| conditions: (empty) phi: linear_eqs: x = a1+1 && term_eqs: [a1+1]=x && intervals: x≥1 |}]
   end )
 
 
