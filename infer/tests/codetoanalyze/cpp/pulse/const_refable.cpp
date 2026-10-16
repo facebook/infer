@@ -160,6 +160,20 @@ void captured_shared_ptr_bad_FN(std::shared_ptr<int> a) {
   call_lambda([&a]() {});
 }
 
+// lock() does not modify the weak pointer, nor does writing to the locked
+// object
+void lock_weak_ptr_bad(std::weak_ptr<int> p) {
+  if (auto s = p.lock()) {
+    *s = 1;
+  }
+}
+
+int reset_weak_ptr_ok(std::weak_ptr<int> p) {
+  auto s = p.lock();
+  p.reset();
+  return s ? *s : 0;
+}
+
 Arr global;
 
 class AssignField {

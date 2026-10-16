@@ -5,6 +5,7 @@
  * LICENSE file in the root directory of this source tree.
  */
 
+#include <dirent.h>
 #include <errno.h>
 #include <fcntl.h>
 #include <stdbool.h>
@@ -12,11 +13,32 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <sys/mman.h>
 #include <sys/select.h>
 #include <sys/socket.h>
 #include <sys/stat.h>
+#include <sys/syscall.h>
 #include <sys/types.h>
 #include <unistd.h>
+
+// not declared by the headers above on every platform
+int accept4(int sockfd, struct sockaddr* addr, socklen_t* addrlen, int flags);
+int creat64(const char* path, mode_t mode);
+int epoll_create(int size);
+int epoll_create1(int flags);
+int eventfd(unsigned int initval, int flags);
+int inotify_init(void);
+int inotify_init1(int flags);
+int memfd_create(const char* name, unsigned int flags);
+int mkostemp(char* tmpl, int flags);
+int pipe2(int fds[2], int flags);
+int timerfd_create(int clockid, int flags);
+
+int* get_fds_slot(void* ctx);
+int* get_global_fds(void);
+void register_fd(int fd);
+struct fd_wrapper* wrap_fd(int fd, int close_on_free);
+void attach_fd_wrapper(void* owner, struct fd_wrapper* wrapper);
 
 void fileNotClosed_bad() {
   int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
@@ -41,7 +63,11 @@ void fdopen_to_global_ok() {
   int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
   if (fd != -1) {
     handler = fdopen(fd, "w");
-    fclose(handler);
+    if (handler) {
+      fclose(handler);
+    } else {
+      close(fd);
+    }
   }
 }
 
@@ -49,8 +75,91 @@ void gzdopen_to_global_ok() {
   int fd = open("hi.txt", O_WRONLY | O_CREAT | O_TRUNC, 0600);
   if (fd != -1) {
     handler = gzdopen(fd, "w");
+    if (handler) {
+      fclose(handler);
+    } else {
+      close(fd);
+    }
+  }
+}
+
+int fdopen_failure_leaks_fd_bad() {
+  int fd = open("hi.txt", O_RDONLY, 0);
+  if (fd == -1) {
+    return -1;
+  }
+  FILE* f = fdopen(fd, "r");
+  if (!f) {
+    return -1;
+  }
+  int c = fgetc(f);
+  fclose(f);
+  return c;
+}
+
+void fdopen_then_close_fd_bad() {
+  int fd = open("hi.txt", O_RDONLY, 0);
+  if (fd == -1) {
+    return;
+  }
+  FILE* f = fdopen(fd, "r");
+  close(fd);
+  if (f) {
+    fclose(f);
+  }
+}
+
+void fdopen_unchecked_fclose_bad() {
+  int fd = open("hi.txt", O_RDONLY, 0);
+  if (fd == -1) {
+    return;
+  }
+  FILE* f = fdopen(fd, "r");
+  fclose(f);
+}
+
+void gzdopen_failure_leaks_fd_bad() {
+  int fd = open("hi.txt", O_RDONLY, 0);
+  if (fd == -1) {
+    return;
+  }
+  handler = gzdopen(fd, "r");
+  if (handler) {
     fclose(handler);
   }
+}
+
+void fdopen_minus_one_then_null_deref_bad() {
+  FILE* f = fdopen(-1, "r");
+  int* p = NULL;
+  *p = 42;
+}
+
+int fdopendir_failure_leaks_fd_bad() {
+  int fd = open(".", O_RDONLY, 0);
+  if (fd == -1) {
+    return -1;
+  }
+  DIR* d = fdopendir(fd);
+  if (!d) {
+    return -1;
+  }
+  closedir(d);
+  return 0;
+}
+
+int fdopendir_ok() {
+  int fd = open(".", O_RDONLY, 0);
+  if (fd == -1) {
+    return -1;
+  }
+  DIR* d = fdopendir(fd);
+  if (!d) {
+    close(fd);
+    return -1;
+  }
+  closedir(d);
+  return 0;
 }
 
 void socketNotClosed_bad() {
@@ -177,3 +286,286 @@ void fdsanClosed_ok() {
     android_fdsan_close_with_tag(fd, 0);
   }
 }
+
+void creat_not_closed_bad() { int fd = creat("hi.txt", 0600); }
+
+void creat64_not_closed_bad() { int fd = creat64("hi.txt", 0600); }
+
+void dup_not_closed_bad(int fd) { int copy = dup(fd); }
+
+void dup_closed_ok(int fd) {
+  int copy = dup(fd);
+  if (copy != -1) {
+    close(copy);
+  }
+}
+
+void dup_does_not_close_argument_ok() {
+  int fd = open("hi.txt", O_RDONLY, 0);
+  if (fd == -1) {
+    return;
+  }
+  int copy = dup(fd);
+  if (copy != -1) {
+    close(copy);
+  }
+  close(fd);
+}
+
+void epoll_create_not_closed_bad() { int fd = epoll_create(1); }
+
+void epoll_create1_not_closed_bad() { int fd = epoll_create1(0); }
+
+void eventfd_not_closed_bad() { int fd = eventfd(0, 0); }
+
+int eventfd_returned_ok() { return eventfd(0, 0); }
+
+// Pulse does not know that an unknown function can take ownership of a
+// descriptor passed by value
+void FP_eventfd_passed_to_unknown_ok() {
+  int fd = eventfd(0, 0);
+  if (fd != -1) {
+    register_fd(fd);
+  }
+}
+
+void eventfd_closed_by_syscall_ok() {
+  int fd = eventfd(0, 0);
+  if (fd != -1) {
+    syscall(SYS_close, fd);
+  }
+}
+
+static int close_with_syscall(int fd) { return syscall(SYS_close, fd); }
+
+void open_closed_by_syscall_in_callee_ok() {
+  int fd = open("hi.txt", O_RDONLY);
+  if (fd != -1) {
+    close_with_syscall(fd);
+  }
+}
+
+void close_after_syscall_close_bad() {
+  int fd = open("hi.txt", O_RDONLY);
+  if (fd != -1) {
+    syscall(SYS_close, fd);
+    close(fd);
+  }
+}
+
+void eventfd_not_closed_by_other_syscall_bad() {
+  int fd = eventfd(0, 0);
+  if (fd != -1) {
+    syscall(SYS_fsync, fd);
+  }
+}
+
+void inotify_init_not_closed_bad() { int fd = inotify_init(); }
+
+void inotify_init1_not_closed_bad() { int fd = inotify_init1(0); }
+
+void timerfd_create_not_closed_bad() { int fd = timerfd_create(1, 0); }
+
+void memfd_create_not_closed_bad() { int fd = memfd_create("buffer", 0); }
+
+void mkstemp_not_closed_bad() {
+  char name[] = "/tmp/fileXXXXXX";
+  int fd = mkstemp(name);
+}
+
+void mkostemp_not_closed_bad() {
+  char name[] = "/tmp/fileXXXXXX";
+  int fd = mkostemp(name, 0);
+}
+
+int accept_not_closed_bad(int listen_fd) {
+  int fd = accept(listen_fd, NULL, NULL);
+  if (fd == -1) {
+    return -1;
+  }
+  return 0;
+}
+
+int accept4_not_closed_bad(int listen_fd) {
+  int fd = accept4(listen_fd, NULL, NULL, 0);
+  if (fd == -1) {
+    return -1;
+  }
+  return 0;
+}
+
+int accept_writes_address_ok(int listen_fd) {
+  struct sockaddr addr;
+  socklen_t len = sizeof(addr);
+  int fd = accept(listen_fd, &addr, &len);
+  if (fd == -1) {
+    return -1;
+  }
+  close(fd);
+  return addr.sa_family;
+}
+
+void accept_twice_ok(int listen_fd) {
+  int fd1 = accept(listen_fd, NULL, NULL);
+  int fd2 = accept(listen_fd, NULL, NULL);
+  if (fd1 != -1) {
+    close(fd1);
+  }
+  if (fd2 != -1) {
+    close(fd2);
+  }
+}
+
+struct listener {
+  int fd;
+  void* (*on_accept)(int fd, void* context);
+  void* context;
+};
+
+void* accept_passed_to_callback_ok(struct listener* l) {
+  int fd = accept(l->fd, NULL, NULL);
+  if (fd == -1) {
+    return NULL;
+  }
+  return l->on_accept(fd, l->context);
+}
+
+void accept_wrapped_by_unknown_ok(int listen_fd, void* owner) {
+  int fd = accept(listen_fd, NULL, NULL);
+  if (fd != -1) {
+    attach_fd_wrapper(owner, wrap_fd(fd, 1));
+  }
+}
+
+void* mmap_failure_not_closed_bad(const char* path, size_t size) {
+  int fd = open(path, O_RDONLY);
+  if (fd == -1) {
+    return NULL;
+  }
+  void* p = mmap(NULL, size, PROT_READ, MAP_PRIVATE, fd, 0);
+  if (p == MAP_FAILED) {
+    return NULL;
+  }
+  close(fd);
+  return p;
+}
+
+int pipe_not_closed_bad() {
+  int fds[2];
+  if (pipe(fds) == -1) {
+    return -1;
+  }
+  return 0;
+}
+
+int pipe_one_end_closed_bad() {
+  int fds[2];
+  if (pipe(fds) == -1) {
+    return -1;
+  }
+  close(fds[0]);
+  return 0;
+}
+
+int pipe_closed_ok() {
+  int fds[2];
+  if (pipe(fds) == -1) {
+    return -1;
+  }
+  close(fds[0]);
+  close(fds[1]);
+  return 0;
+}
+
+// Pulse does not identify `(&fds[0])[i]`, where the model stores the
+// descriptors, with `fds[i]`
+int FP_pipe_address_of_first_element_ok() {
+  int fds[2];
+  if (pipe(&fds[0]) == -1) {
+    return -1;
+  }
+  close(fds[0]);
+  close(fds[1]);
+  return 0;
+}
+
+int pipe_pointer_offset_ok(int* fds, int i) { return pipe(fds + 2 * i); }
+
+// Pulse does not relate `slot` to the memory of `fds`, so the descriptors are
+// unreachable as soon as they are created
+int FP_pipe_pointer_offset_in_variable_ok(int* fds, int i) {
+  int* slot = fds + 2 * i;
+  return pipe(slot);
+}
+
+int pipe_unknown_destination_ok(void* ctx) { return pipe(get_fds_slot(ctx)); }
+
+// Pulse only remembers that a pointer was returned by an unknown function when
+// the call has arguments
+int FP_pipe_unknown_destination_without_arguments_ok() {
+  return pipe(get_global_fds());
+}
+
+int pipe2_not_closed_bad() {
+  int fds[2];
+  if (pipe2(fds, 0) == -1) {
+    return -1;
+  }
+  close(fds[1]);
+  return 0;
+}
+
+int socketpair_not_closed_bad() {
+  int fds[2];
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) == -1) {
+    return -1;
+  }
+  return 0;
+}
+
+void socketpair_one_end_returned_ok(int* out) {
+  int fds[2];
+  if (socketpair(AF_UNIX, SOCK_STREAM, 0, fds) == 0) {
+    close(fds[0]);
+    *out = fds[1];
+  }
+}
+
+int popen_not_closed_bad(const char* command) {
+  char buf[64];
+  FILE* p = popen(command, "r");
+  if (!p) {
+    return -1;
+  }
+  if (!fgets(buf, sizeof(buf), p)) {
+    return -1;
+  }
+  return pclose(p);
+}
+
+int popen_closed_ok(const char* command) {
+  char buf[64];
+  FILE* p = popen(command, "r");
+  if (!p) {
+    return -1;
+  }
+  fgets(buf, sizeof(buf), p);
+  return pclose(p);
+}
+
+int popen_unchecked_bad(const char* command) {
+  FILE* p = popen(command, "r");
+  int c = fgetc(p);
+  pclose(p);
+  return c;
+}
+
+void pclose_twice_bad(const char* command) {
+  FILE* p = popen(command, "r");
+  if (p) {
+    pclose(p);
+    pclose(p);
+  }
+}
+
+void tmpfile_not_closed_bad() { FILE* f = tmpfile(); }
