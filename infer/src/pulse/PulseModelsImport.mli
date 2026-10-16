@@ -182,6 +182,10 @@ module Basic : sig
     -> (AbstractValue.t * ValueHistory.t) FuncArg.t list
     -> model_no_non_disj
 
+  val skipped_known_call : (AbstractValue.t * ValueHistory.t) FuncArg.t list -> model_no_non_disj
+  (** exactly what a call to a function without a summary does, including the uninterpreted function
+      term for calls that look pure and the record of the skipped call *)
+
   val unknown_call_without_formals :
        ?force_pure:bool
     -> string
