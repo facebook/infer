@@ -43,3 +43,34 @@ void access_via_class_field_constant_global_Bad() {
   int a[5];
   a[ConstantGlobalFoos[0].p] = 3;
 }
+
+struct ClassWithStaticArray {
+  static int arr[4];
+};
+
+int ClassWithStaticArray::arr[4] = {1, 2, 3, 4};
+
+int read_class_static_array_Bad() { return ClassWithStaticArray::arr[4]; }
+
+int read_class_static_array_Good() { return ClassWithStaticArray::arr[3]; }
+
+namespace ns {
+int arr[4];
+}
+
+void store_namespace_global_array_Bad() {
+  for (int i = 0; i <= 4; i++) {
+    ns::arr[i] = 0;
+  }
+}
+
+void store_namespace_global_array_Good() {
+  for (int i = 0; i < 4; i++) {
+    ns::arr[i] = 0;
+  }
+}
+
+int read_static_local_array_Bad() {
+  static int cache[2];
+  return cache[2];
+}

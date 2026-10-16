@@ -443,6 +443,28 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     mk_trans_result (mk_fresh_void_exp_typ ()) {empty_control with root_nodes= succ_nodes}
 
 
+  (** add the names of the local variables that [stmt] references to [vars] *)
+  let rec add_referenced_local_vars context vars stmt =
+    let vars =
+      match (stmt : Clang_ast_t.stmt) with
+      | `DeclRefExpr
+          (_, _, _, {Clang_ast_t.drti_decl_ref= Some {Clang_ast_t.dr_kind= `Var; dr_decl_pointer}})
+        -> (
+        match CAst_utils.get_decl dr_decl_pointer with
+        | Some (Clang_ast_t.VarDecl (_, _, _, {Clang_ast_t.vdi_is_global= false}) as var_decl) ->
+            let procname = Procdesc.get_proc_name context.CContext.procdesc in
+            Mangled.Set.add
+              (Pvar.get_name (CVar_decl.sil_var_of_decl context var_decl procname))
+              vars
+        | _ ->
+            vars )
+      | _ ->
+          vars
+    in
+    let _, children = Clang_ast_proj.get_stmt_tuple stmt in
+    List.fold children ~init:vars ~f:(add_referenced_local_vars context)
+
+
   (* The stmt seems to be always empty *)
   let unaryExprOrTypeTraitExpr_trans trans_state unary_expr_or_type_trait_expr_info =
     let tenv = trans_state.context.CContext.tenv in
@@ -928,6 +950,11 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
       CVar_decl.sil_var_of_decl_ref context stmt_info.Clang_ast_t.si_source_range decl_ref procname
     in
     CContext.add_block_static_var context procname (pvar, typ) ;
+    ( match typ.Typ.desc with
+    | (Tarray _ | Tstruct _) when Pvar.is_global pvar ->
+        CContext.add_global context pvar typ
+    | _ ->
+        () ) ;
     let var_exp = Exp.Lvar pvar in
     (* Captured variables without initialization do not have the correct types
        inside of lambda bodies. The same issue happens for variables captured by reference
@@ -2489,6 +2516,41 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         declStmt_trans trans_state_decl decl_list stmt_info
     | _ ->
         res_trans_cond
+
+
+  (** Only the branch selected at compile time is translated: pruning on the constant instead would
+      not hide the discarded branch from the checkers that are not path-sensitive. *)
+  and constexprIfStmt_trans trans_state stmt_info (if_stmt_info : Clang_ast_t.if_stmt_info) =
+    let source_range = stmt_info.Clang_ast_t.si_source_range in
+    let cond_value =
+      match CAst_utils.get_stmt_exn if_stmt_info.isi_cond source_range with
+      | `ConstantExpr (_, _, _, {Clang_ast_t.ce_literal= Some {ili_value}}) -> (
+        try Some (IntLit.of_string ili_value) with Failure _ -> None )
+      | _ ->
+          None
+    in
+    match cond_value with
+    | Some cond_value ->
+        let context = trans_state.context in
+        let get_stmt stmt_ptr = CAst_utils.get_stmt_exn stmt_ptr source_range in
+        let else_branch = Option.map if_stmt_info.isi_else ~f:fst in
+        let taken_branch, discarded_branch =
+          if IntLit.iszero cond_value then (else_branch, Some if_stmt_info.isi_then)
+          else (Some if_stmt_info.isi_then, else_branch)
+        in
+        Option.iter discarded_branch ~f:(fun stmt_ptr ->
+            let vars = context.CContext.vars_in_discarded_branches in
+            vars := add_referenced_local_vars context !vars (get_stmt stmt_ptr) ) ;
+        let stmts =
+          List.filter_opt
+            [ Option.map if_stmt_info.isi_init ~f:get_stmt
+            ; if_stmt_info.isi_cond_var
+            ; Option.map taken_branch ~f:get_stmt ]
+        in
+        let control, _ = instructions Procdesc.Node.IfStmtBranch trans_state stmts in
+        mk_trans_result (mk_fresh_void_exp_typ ()) control
+    | None ->
+        ifStmt_trans trans_state stmt_info if_stmt_info
 
 
   and ifStmt_trans trans_state stmt_info (if_stmt_info : Clang_ast_t.if_stmt_info) =
@@ -5127,7 +5189,10 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
         atomicExpr_trans trans_state atomic_info stmt_info expr_info stmt_list
     | `CallExpr (stmt_info, stmt_list, ei) | `UserDefinedLiteral (stmt_info, stmt_list, ei) ->
         callExpr_trans trans_state stmt_info stmt_list ei
-    | `ConstantExpr (_, stmt_list, _) -> (
+    | `ConstantExpr (_, _, expr_info, {Clang_ast_t.ce_literal= Some integer_literal_info}) ->
+        (* the sub-expression is only evaluated at compile time *)
+        integerLiteral_trans trans_state expr_info integer_literal_info
+    | `ConstantExpr (_, stmt_list, _, _) -> (
       match stmt_list with
       | [stmt] ->
           instruction_translate trans_state stmt
@@ -5154,6 +5219,8 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     | `ConditionalOperator (stmt_info, stmt_list, expr_info) ->
         (* Ternary operator "cond ? exp1 : exp2" *)
         conditionalOperator_trans trans_state stmt_info stmt_list expr_info
+    | `IfStmt (stmt_info, _, ({Clang_ast_t.isi_is_constexpr= true} as if_stmt_info)) ->
+        constexprIfStmt_trans trans_state stmt_info if_stmt_info
     | `IfStmt (stmt_info, _, if_stmt_info) ->
         ifStmt_trans trans_state stmt_info if_stmt_info
     | `SwitchStmt (stmt_info, _, switch_stmt_info) ->
@@ -5681,5 +5748,13 @@ module CTrans_funct (F : CModule_type.CFrontend) : CModule_type.CTranslation = s
     let instrs = extra_instrs @ [CFrontend_config.ClangStmt (DefineBody, body)] in
     let instrs_trans = List.map ~f:get_custom_stmt_trans instrs in
     let res_control, _ = exec_trans_instrs trans_state' instrs_trans in
+    (* liveness must not report stores that only a discarded branch reads *)
+    let attributes = Procdesc.get_attributes context.CContext.procdesc in
+    let vars_in_discarded_branches = !(context.CContext.vars_in_discarded_branches) in
+    attributes.locals <-
+      List.map attributes.locals ~f:(fun (local : ProcAttributes.var_data) ->
+          if Mangled.Set.mem local.name vars_in_discarded_branches then
+            {local with is_declared_unused= true}
+          else local ) ;
     res_control.root_nodes
 end

@@ -141,3 +141,32 @@ void array_rev_iter_Bad_FN() {
 void malloc_zero_Bad() { int* a = (int*)malloc(sizeof(int) * 0); }
 
 void new_array_zero_Good() { int* a = new int[0]; }
+
+std::array<int, 4> global_std_array;
+
+int read_global_std_array_Bad() { return global_std_array[4]; }
+
+int read_global_std_array_Good() { return global_std_array[3]; }
+
+std::array<std::array<int, 3>, 2> global_nested_std_array;
+
+int read_global_nested_std_array_Good() {
+  return global_nested_std_array[1][2];
+}
+
+std::array<unsigned, 4> global_std_array_counts;
+
+static unsigned minus_one(unsigned n) { return n - 1u; }
+
+static unsigned minus_one_global_std_array(int i) {
+  return minus_one(global_std_array_counts[i & 3]);
+}
+
+// reported in each caller, as for other global arrays
+unsigned call_minus_one_global_std_array1_Bad(int i) {
+  return minus_one_global_std_array(i);
+}
+
+unsigned call_minus_one_global_std_array2_Bad(int i) {
+  return minus_one_global_std_array(i + 1);
+}

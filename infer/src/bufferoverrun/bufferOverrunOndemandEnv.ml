@@ -14,10 +14,13 @@ module FormalTyps = Stdlib.Map.Make (Pvar)
 type t =
   { tenv: Tenv.t
   ; typ_of_param_path: SPath.partial -> Typ.t option
+  ; typ_of_global_array: Pvar.t -> Typ.t option
   ; may_last_field: SPath.partial -> bool
   ; entry_location: Location.t
   ; integer_type_widths: IntegerWidths.t
   ; class_name: Typ.name option }
+
+let rec strip_array (typ : Typ.t) = match typ.desc with Tarray {elt} -> strip_array elt | _ -> typ
 
 let mk pdesc =
   let pname = Procdesc.get_proc_name pdesc in
@@ -28,12 +31,61 @@ let mk pdesc =
     List.fold (Procdesc.get_captured pdesc) ~init ~f:(fun acc {CapturedVar.pvar; typ} ->
         FormalTyps.add pvar typ acc )
   in
+  let global_typs =
+    (* a variable recorded with several types, e.g. same-named static locals of different scopes,
+       is left untyped *)
+    List.fold (Procdesc.get_globals pdesc) ~init:Pvar.Map.empty ~f:(fun acc (pvar, typ) ->
+        Pvar.Map.update pvar (function None -> Some (Some typ) | Some _ -> Some None) acc )
+    |> Pvar.Map.filter_map (fun _ typ_opt -> typ_opt)
+  in
   fun tenv integer_type_widths ->
-    let rec typ_of_param_path = function
+    let c_array_model_element_typ (typ : Typ.t) =
+      match typ.desc with
+      | Tstruct typename -> (
+        match BufferOverrunTypModels.dispatch tenv typename with
+        | Some (CArray {element_typ}) ->
+            Some element_typ
+        | _ ->
+            None )
+      | _ ->
+          None
+    in
+    let is_array (typ : Typ.t) =
+      match typ.desc with Tarray _ -> true | _ -> Option.is_some (c_array_model_element_typ typ)
+    in
+    let global_array_typs =
+      (* the [std::array] model checks the indices of inner arrays against the outer array *)
+      Pvar.Map.filter
+        (fun _ typ ->
+          is_array typ && not (Option.exists (c_array_model_element_typ typ) ~f:is_array) )
+        global_typs
+    in
+    let typ_of_global_array pvar = Pvar.Map.find_opt pvar global_array_typs in
+    (* The declared type of a global [g] does not type the path [g], which is also the path of the
+       elements allocated by the initializer of [g] (see [BufferOverrunUtils.Exec.decl_local_array]),
+       only its fields and, if [g] is an array, its elements. Other dereferences of [g], e.g. of a
+       struct read through a pointer cast, come from the type of a load and are typed by it. *)
+    let rec typ_of_deref_prefix_path deref_kind path =
+      match (deref_kind, path) with
+      | SPath.Deref_ArrayIndex, BoField.Prim (SPath.Pvar x) when Pvar.is_global x ->
+          typ_of_global_array x
+      | _ ->
+          typ_of_param_path path
+    and typ_of_field_prefix_path path =
+      let typ =
+        match path with
+        | BoField.Prim (SPath.Pvar x) when Pvar.is_global x ->
+            Pvar.Map.find_opt x global_typs
+        | _ ->
+            typ_of_param_path path
+      in
+      (* a field of an array is a field of its elements, which can have the path of the array *)
+      Option.map typ ~f:strip_array
+    and typ_of_param_path = function
       | BoField.Prim (SPath.Pvar x) ->
           FormalTyps.find_opt x formal_typs
-      | BoField.Prim (SPath.Deref (_, x)) -> (
-        match typ_of_param_path x with
+      | BoField.Prim (SPath.Deref (deref_kind, x)) -> (
+        match typ_of_deref_prefix_path deref_kind x with
         | None ->
             None
         | Some typ -> (
@@ -66,7 +118,7 @@ let mk pdesc =
         match BoField.get_type fn with
         | None ->
             let lookup = Tenv.lookup tenv in
-            Option.bind (typ_of_param_path x)
+            Option.bind (typ_of_field_prefix_path x)
               ~f:
                 ( if Config.bo_assume_void then fun t ->
                     Some (Struct.fld_typ ~lookup ~default:StdTyp.void fn t)
@@ -85,7 +137,7 @@ let mk pdesc =
           true
       | BoField.(Field {fn; prefix= x} | StarField {last_field= fn; prefix= x}) ->
           may_last_field x
-          && Option.value_map ~default:true (typ_of_param_path x) ~f:(fun parent_typ ->
+          && Option.value_map ~default:true (typ_of_field_prefix_path x) ~f:(fun parent_typ ->
               match parent_typ.Typ.desc with
               | Tstruct typename ->
                   let opt_struct = Tenv.lookup tenv typename in
@@ -95,4 +147,10 @@ let mk pdesc =
     in
     let entry_location = Procdesc.Node.get_loc (Procdesc.get_start_node pdesc) in
     let class_name = Procname.get_class_type_name pname in
-    {tenv; typ_of_param_path; may_last_field; entry_location; integer_type_widths; class_name}
+    { tenv
+    ; typ_of_param_path
+    ; typ_of_global_array
+    ; may_last_field
+    ; entry_location
+    ; integer_type_widths
+    ; class_name }
