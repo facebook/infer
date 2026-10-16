@@ -27,6 +27,7 @@ import javax.ws.rs.POST;
 import javax.ws.rs.Path;
 import javax.ws.rs.PathParam;
 import javax.ws.rs.QueryParam;
+import org.apache.commons.io.FilenameUtils;
 
 // A document service storing the files of its users on disk. A file name or path such as
 // "../../etc/passwd" lets the client read or write files outside of the directories of the service.
@@ -183,12 +184,39 @@ public class PathTraversal {
     return java.nio.file.Files.readAllBytes(document);
   }
 
-  // A UUID only contains hexadecimal digits and dashes. Pulse propagates the taint through the
-  // conversion to and from a UUID.
+  // the name is checked by a validator declared as a sanitizer (see Validators.java)
+  @GET
+  @Path("/v5/validated/{name}")
+  byte[] documentWithValidatedNameOk(@PathParam("name") String name) throws IOException {
+    String fileName = Validators.requireFileName(name);
+    return java.nio.file.Files.readAllBytes(Paths.get(DOCUMENTS).resolve(fileName));
+  }
+
+  // a UUID only contains hexadecimal digits and dashes
   @GET
   @Path("/v6/{id}")
-  byte[] FP_documentByIdOk(@PathParam("id") String id) throws IOException {
+  byte[] documentByIdOk(@PathParam("id") String id) throws IOException {
     UUID uuid = UUID.fromString(id);
     return java.nio.file.Files.readAllBytes(Paths.get(DOCUMENTS, uuid.toString()));
+  }
+
+  // `FilenameUtils.getName` drops the directories, so only a file of the documents directory can be
+  // read
+  @GET
+  @Path("/v7/{name}")
+  byte[] documentByFileNameOk(@PathParam("name") String name) throws IOException {
+    return java.nio.file.Files.readAllBytes(Paths.get(DOCUMENTS, FilenameUtils.getName(name)));
+  }
+
+  // A sanitizer applies to its argument, so the name given to `FilenameUtils.getName` is no longer
+  // tainted, even where it is used as it is.
+  @GET
+  @Path("/v8/{name}")
+  byte[] FN_documentByNameAfterFileNameBad(@PathParam("name") String name) throws IOException {
+    String fileName = FilenameUtils.getName(name);
+    if (fileName.isEmpty()) {
+      throw new IllegalArgumentException("no file name");
+    }
+    return java.nio.file.Files.readAllBytes(Paths.get(DOCUMENTS, name));
   }
 }

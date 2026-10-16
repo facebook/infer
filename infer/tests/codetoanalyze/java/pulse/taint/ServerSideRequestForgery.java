@@ -126,6 +126,12 @@ public class ServerSideRequestForgery {
     return uri.toURL().openStream();
   }
 
+  // the same check, done by a validator declared as a sanitizer (see Validators.java)
+  InputStream allowedHostValidatorOk() throws Exception {
+    URI uri = Validators.requireAllowedHost(URI.create(userControlledString()));
+    return uri.toURL().openStream();
+  }
+
   // javax.imageio.ImageIO
 
   BufferedImage imageIOReadUrlBad() throws Exception {

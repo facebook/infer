@@ -292,6 +292,7 @@
       "taint_flows": [
         {
           "source_kinds": ["User-controlled Input"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["SQLInjection"]
         }
       ]
@@ -301,6 +302,7 @@
       "taint_flows": [
         {
           "source_kinds": ["User-controlled Input"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["Deserialization"]
         }
       ]
@@ -310,6 +312,7 @@
       "taint_flows": [
         {
           "source_kinds": ["User-controlled Input"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["SSRF"]
         }
       ]
@@ -319,6 +322,7 @@
       "taint_flows": [
         {
           "source_kinds": ["User-controlled Input"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["Path Traversal"]
         }
       ]
@@ -328,6 +332,7 @@
       "taint_flows": [
         {
           "source_kinds": ["User-controlled Input"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["Command Injection"]
         }
       ]
@@ -337,6 +342,7 @@
       "taint_flows": [
         {
           "source_kinds": ["User-controlled Input"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["XXE"]
         }
       ]
@@ -346,6 +352,7 @@
       "taint_flows": [
         {
           "source_kinds": ["User-controlled Input"],
+          "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["XSS"]
         }
       ]

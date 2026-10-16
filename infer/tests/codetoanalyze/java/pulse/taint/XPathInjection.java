@@ -100,6 +100,14 @@ public class XPathInjection {
     return newXPath().evaluate("//user[@name='" + name + "']/email", users);
   }
 
+  // the same check, done by a validator declared as a sanitizer (see Validators.java)
+  @GET
+  @Path("/v3/validated/email")
+  String emailByValidatedNameOk(@QueryParam("name") String name) throws Exception {
+    String validName = Validators.requireAlphanumeric(name);
+    return newXPath().evaluate("//user[@name='" + validName + "']/email", users);
+  }
+
   // interprocedural
 
   private String findEmail(String name) throws Exception {

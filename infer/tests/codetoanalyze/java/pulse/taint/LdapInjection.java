@@ -123,6 +123,15 @@ public class LdapInjection {
     return directory.search(PEOPLE, "(uid=" + uid + ")", controls);
   }
 
+  // the same check, done by a validator declared as a sanitizer (see Validators.java)
+  @GET
+  @Path("/v5/validated/people")
+  NamingEnumeration<SearchResult> personByValidatedUidOk(@QueryParam("uid") String uid)
+      throws NamingException {
+    String validUid = Validators.requireAlphanumeric(uid);
+    return directory.search(PEOPLE, "(uid=" + validUid + ")", controls);
+  }
+
   // interprocedural
 
   private NamingEnumeration<SearchResult> findPerson(String uid) throws NamingException {
