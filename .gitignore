@@ -95,6 +95,7 @@ META-INF
 /config.status
 /m4/__GENERATED__*.m4
 /configure
+/install-sh
 /Makefile.autoconf
 /.buckversion
 /.buck-java11
