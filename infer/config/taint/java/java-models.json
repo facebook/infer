@@ -111,6 +111,13 @@
           "sanitizer_kinds": ["Sanitizer"],
           "sink_kinds": ["XMLParsing"] }
       ]
+    },
+    { "short_description": "Log Injection",
+      "taint_flows": [
+        { "source_kinds": ["Endpoint", "UserControlledString"],
+          "sanitizer_kinds": ["Sanitizer"],
+          "sink_kinds": ["Logging"] }
+      ]
     }
   ],
   "pulse-taint-sources": [
@@ -340,6 +347,10 @@
     },
     { "class_names": ["android.util.Log"],
       "method_names": ["e", "println", "w", "wtf"],
+      "kinds": ["Logging"]
+    },
+    { "class_names": ["java.util.logging.Logger"],
+      "method_names": ["config", "fine", "finer", "finest", "info", "log", "logp", "severe", "warning"],
       "kinds": ["Logging"]
     },
     { "class_names": ["android.webkit.WebView"],
