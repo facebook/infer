@@ -1,3 +1,9 @@
 website/** linguist-documentation
 *.ml linguist-language=OCaml
 *.mli linguist-language=OCaml
+
+# Check out text files with LF everywhere, including on Windows, where a core.autocrlf=true
+# checkout would otherwise CRLF-ify them. The build is driven by bash and GNU make there too
+# (MSYS2), and a `\r` breaks shebangs and Makefile.config's `SHELL := bash -e -o pipefail -u`. The
+# tests also compare infer's LF output byte for byte against the expected output checked in here.
+* text=auto eol=lf
