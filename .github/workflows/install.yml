@@ -94,6 +94,7 @@ jobs:
         with:
           distribution: 'temurin'
           java-version: '21'
+          cache: 'maven'
 
       - name: Setup Python
         uses: actions/setup-python@v6
