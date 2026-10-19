@@ -10,6 +10,7 @@ package codetoanalyze.java.pulse;
 import android.location.Location;
 import android.telephony.TelephonyManager;
 import android.util.Log;
+import java.util.logging.Logger;
 
 public class LoggingPrivateData {
 
@@ -55,5 +56,9 @@ public class LoggingPrivateData {
     Log.println(0, TAG, source);
     Log.w(TAG, source);
     Log.wtf(TAG, source); // 10 sources * 4 sinks = 40 expected reports
+  }
+
+  public void logPhoneNumberWithJavaLoggerBad(TelephonyManager t) {
+    Logger.getLogger("phone").info("phone number: " + t.getLine1Number());
   }
 }
