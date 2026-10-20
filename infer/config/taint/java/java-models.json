@@ -421,7 +421,7 @@
     { "class_names": ["java.lang.Runtime"],
       "method_names": ["exec"],
       "kinds": ["ShellExec"],
-      "taint_target": ["ArgumentPositions", [0]]
+      "taint_target": ["ArgumentPositions", [0, 1]]
     },
     { "class_names": ["java.net.URL"],
       "method_names": ["getContent", "openConnection", "openStream"],
