@@ -443,7 +443,8 @@ struct
             (((post, non_disj_astates) as post_astate), dropped, n_disjuncts, extra)
             pre_disjunct
           ->
-          if n_disjuncts >= global_limit && not (use_balanced_disjunct_strategy ()) then (
+          (* the balanced strategy below gives a disjunct a [limit] of 0 exactly when this holds *)
+          if n_disjuncts >= global_limit then (
             L.d_printfln "@[<v2>Reached max disjuncts limit, skipping disjunct #%d@;@]" i ;
             (post_astate, pre_disjunct :: dropped, n_disjuncts, 0) )
           else
