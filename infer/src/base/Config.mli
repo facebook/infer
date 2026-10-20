@@ -71,6 +71,9 @@ val fail_on_issue_exit_code : int
 
 val fcp_dir : string
 
+val infer_binary : string
+(** path to the infer executable that is running, including its [.exe] suffix on Windows *)
+
 val initial_analysis_time : float
 
 val is_running_unit_test : bool

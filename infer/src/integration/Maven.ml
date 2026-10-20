@@ -34,8 +34,7 @@ let infer_profile =
         </plugins>
       </build>
     </profile>|}
-       infer_profile_name
-       (Config.bin_dir ^/ InferCommand.infer_exe_name)
+       infer_profile_name Config.infer_binary
        ( match Config.java_version with
        | Some version when version >= 9 ->
            Printf.sprintf "<release>%d</release>" version

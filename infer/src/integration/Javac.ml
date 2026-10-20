@@ -100,7 +100,7 @@ let no_source_file args =
 
 
 let call_infer_javac_capture ~javac_args =
-  let prog = Config.bin_dir ^/ "infer" in
+  let prog = Config.infer_binary in
   let args =
     "capture" :: "--continue" :: "--" :: "javac"
     :: List.filter_map javac_args ~f:(fun arg ->
