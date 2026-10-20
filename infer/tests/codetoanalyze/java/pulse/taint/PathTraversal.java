@@ -128,6 +128,24 @@ public class PathTraversal {
     return java.nio.file.Files.readString(template.resolveSibling(name));
   }
 
+  // the working directory of a process, already reported where its path is built
+
+  @POST
+  @Path("/convert")
+  Process convertInDirectoryBad(@FormParam("folder") String folder) throws IOException {
+    return Runtime.getRuntime()
+        .exec("/usr/bin/convert-documents", null, new File(DOCUMENTS, folder));
+  }
+
+  @POST
+  @Path("/v2/convert")
+  Process convertWithProcessBuilderInDirectoryBad(@FormParam("folder") String folder)
+      throws IOException {
+    return new ProcessBuilder("/usr/bin/convert-documents")
+        .directory(Paths.get(DOCUMENTS, folder).toFile())
+        .start();
+  }
+
   // interprocedural
 
   private static byte[] readDocument(String name) throws IOException {
