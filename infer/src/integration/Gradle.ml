@@ -90,7 +90,7 @@ let capture_gradle_target (out_dir, (javac_data : javac_data)) =
         else Some arg )
     |> write_args_file "java_opts"
   in
-  let prog = Config.bin_dir ^/ "infer" in
+  let prog = Config.infer_binary in
   let args =
     ["capture"; "-j"; "1"; "-o"; out_dir; "--"; "javac"; "@" ^ gradle_files; "@" ^ java_opts]
   in
