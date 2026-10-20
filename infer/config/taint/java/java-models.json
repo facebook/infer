@@ -353,6 +353,14 @@
       "method_names": ["config", "fine", "finer", "finest", "info", "log", "logp", "severe", "warning"],
       "kinds": ["Logging"]
     },
+    { "class_names": ["org.slf4j.Logger"],
+      "method_names": ["debug", "error", "info", "trace", "warn"],
+      "kinds": ["Logging"]
+    },
+    { "class_names": ["org.apache.logging.log4j.Logger"],
+      "method_names": ["debug", "error", "fatal", "info", "log", "printf", "trace", "warn"],
+      "kinds": ["Logging"]
+    },
     { "class_names": ["android.webkit.WebView"],
       "method_names": ["evaluateJavascript", "loadData", "loadDataWithBaseURL", "loadUrl", "postUrl", "postWebMessage"],
       "kinds": ["ScriptInjection"]
