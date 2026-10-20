@@ -9,7 +9,7 @@ SOURCES = $(sort $(wildcard *.hack))
 # Hack textual uses Hack-specific builtins that --capture-textual can't parse
 PARSE_EXPORTED = no
 # Filter out model files which have absolute paths
-MANIFEST_FILTER = python3 -c "import json,sys; m=json.load(sys.stdin); json.dump([e for e in m if not e['source'].startswith('/')],sys.stdout,indent=2); print()"
+MANIFEST_FILTER = python3 -c "import json,os,sys; m=json.load(sys.stdin); json.dump([e for e in m if not os.path.isabs(e['source'])],sys.stdout,indent=2); print()"
 
 .PHONY: capture
 capture: $(SOURCES) $(INFER_BIN) $(HACKC)
