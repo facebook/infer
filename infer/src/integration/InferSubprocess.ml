@@ -49,8 +49,8 @@ let raw_env () =
 
 
 let with_devnull_stdin_stdout ~f =
-  let stdin_null = IUnix.openfile ~mode:[O_RDONLY] "/dev/null" in
-  let stdout_null = IUnix.openfile ~mode:[O_WRONLY] "/dev/null" in
+  let stdin_null = IUnix.openfile ~mode:[O_RDONLY] Stdlib.Filename.null in
+  let stdout_null = IUnix.openfile ~mode:[O_WRONLY] Stdlib.Filename.null in
   protect
     ~finally:(fun () ->
       Unix.close stdin_null ;

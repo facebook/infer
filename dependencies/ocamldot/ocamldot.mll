@@ -17,7 +17,7 @@ let addDepend t =
 }
 
 rule processSource = parse
-    ['.' '-' '/' 'A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246'
+    ['.' '-' '/' '\\' 'A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246'
      '\248'-'\255' '\'' '0'-'9' ]+ '.' ['A'-'Z' 'a'-'z']+
     [' ' '\009']* ':'
       { let s = Lexing.lexeme lexbuf in
@@ -37,7 +37,7 @@ and processTargets = parse
       { processTargets lexbuf }
   | '\\' [' ' '\009']* ['\010' '\013']+ [' ' '\009']+
       { processTargets lexbuf }
-  | ['.' '/' 'A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246'
+  | ['.' '/' '\\' 'A'-'Z' 'a'-'z' '_' '\192'-'\214' '\216'-'\246'
      '\248'-'\255' '\'' '0'-'9' ]+ '.' ['A'-'Z' 'a'-'z']+
       { let t = Lexing.lexeme lexbuf in
         let i = String.rindex t '.' in
