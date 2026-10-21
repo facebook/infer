@@ -2140,8 +2140,84 @@ let should_havoc_if_unknown () =
       `ShouldHavoc
 
 
-let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) hist x astate =
+(** whether the memory reachable from [addresses] is the same as at the start of the procedure *)
+let is_unmodified_since_pre astate addresses =
+  let pre_heap = (astate.pre :> base_domain).heap in
+  let post = (astate.post :> base_domain) in
+  let has_same_edges addr =
+    let get_edges heap =
+      BaseMemory.find_opt addr heap |> Option.value ~default:BaseMemory.Edges.empty
+    in
+    let edges_pre = get_edges pre_heap in
+    let edges_post = get_edges post.heap in
+    let has_same_value edges (access, (value, _)) =
+      BaseMemory.Edges.find_opt access edges
+      |> Option.exists ~f:(fun (value', _) ->
+          CanonValue.equal (CanonValue.canon astate value) (CanonValue.canon astate value') )
+    in
+    BaseMemory.Edges.for_all edges_post ~f:(has_same_value edges_pre)
+    && BaseMemory.Edges.for_all edges_pre ~f:(has_same_value edges_post)
+  in
+  (* the abstract states of [PulseEternal] stand for any iteration of a loop so memory may have
+     been modified by the previous iterations *)
+  Option.is_none astate.loop_invariant_under_inference
+  && GraphVisit.fold_from_addresses addresses astate `Post ~init:()
+       ~already_visited:CanonValue.Set.empty
+       ~f:(fun () addr _ ->
+         if BaseAddressAttributes.has_unknown_effect addr post.attrs || not (has_same_edges addr)
+         then Stop false
+         else Continue () )
+       ~finish:(fun () -> true)
+     |> snd
+
+
+(** [PulseCallOperations.unknown_call] records [ret = f(actuals)] for the unknown calls it deems
+    pure. In C-family languages [f] can read the memory reachable from pointer actuals so forget
+    these equalities when some of that memory, namely the addresses in [written], is modified. Keep
+    them as [ret = f@pre(actuals)] when that memory has not been modified since the start of the
+    procedure. *)
+let forget_pure_calls_reading ~(written : CanonValue.Set.t lazy_t) astate =
+  if not (Language.curr_language_is Clang) then astate
+  else
+    let actuals = Formula.function_application_actuals astate.path_condition in
+    if AbstractValue.Set.is_empty actuals then astate
+    else
+      let written = Lazy.force written in
+      if CanonValue.Set.is_empty written then astate
+      else
+        let reads_written actuals =
+          GraphVisit.fold_from_addresses
+            (Seq.map (CanonValue.canon' astate) actuals)
+            astate `Post ~init:() ~already_visited:CanonValue.Set.empty
+            ~f:(fun () addr _ -> if CanonValue.Set.mem addr written then Stop true else Continue ())
+            ~finish:(fun () -> false)
+          |> snd
+        in
+        (* most writes are unrelated to pure calls so first check all actuals at once *)
+        if not (reads_written (AbstractValue.Set.to_seq actuals)) then astate
+        else
+          let stale_actuals =
+            AbstractValue.Set.filter (fun actual -> reads_written (Seq.return actual)) actuals
+          in
+          let path_condition =
+            Formula.forget_function_applications astate.path_condition
+              ~f:(fun actual -> AbstractValue.Set.mem actual stale_actuals)
+              ~keep_pre:(fun actuals ->
+                is_unmodified_since_pre astate
+                  (Stdlib.List.to_seq actuals |> Seq.map (CanonValue.canon' astate)) )
+          in
+          {astate with path_condition}
+
+
+let apply_unknown_effect ?(havoc_filter = fun _ _ _ -> true) ?(forget_pure_calls = true) hist x
+    astate =
   let x = CanonValue.canon' astate x in
+  let astate =
+    if forget_pure_calls then
+      forget_pure_calls_reading astate
+        ~written:(lazy (reachable_addresses_from (Seq.return x) astate `Post))
+    else astate
+  in
   let havoc_accesses hist addr heap =
     match BaseMemory.find_opt addr heap with
     | None ->
@@ -2549,10 +2625,21 @@ module Memory = struct
   include SafeMemory
 
   let add_edge path orig_addr_hist access dest_addr_hist location astate =
-    SafeMemory.add_edge path
-      (CanonValue.canon_fst' astate orig_addr_hist)
-      (CanonValue.canon_access astate access)
-      dest_addr_hist location astate
+    let ((addr, _) as addr_hist) = CanonValue.canon_fst' astate orig_addr_hist in
+    let access = CanonValue.canon_access astate access in
+    let astate =
+      forget_pure_calls_reading astate
+        ~written:
+          ( lazy
+            (let is_same_value =
+               SafeMemory.find_edge_opt `Post addr access astate
+               |> Option.exists ~f:(fun (dest, _) ->
+                   CanonValue.equal dest (CanonValue.canon' astate (fst dest_addr_hist)) )
+             in
+             (* only the history changes when the value stays the same *)
+             if is_same_value then CanonValue.Set.empty else CanonValue.Set.singleton addr ) )
+    in
+    SafeMemory.add_edge path addr_hist access dest_addr_hist location astate
 
 
   let eval_edge addr_hist access astate =
@@ -2618,6 +2705,15 @@ end
 
 let add_block_source v block astate =
   map_decompiler astate ~f:(fun decompiler -> Decompiler.add_block_source v block decompiler)
+
+
+let forget_pure_calls_reading ~written astate =
+  forget_pure_calls_reading astate
+    ~written:
+      ( lazy
+        (AbstractValue.Set.fold
+           (fun addr written -> CanonValue.Set.add (CanonValue.canon' astate addr) written)
+           (Lazy.force written) CanonValue.Set.empty ) )
 
 
 module AddressAttributes = struct

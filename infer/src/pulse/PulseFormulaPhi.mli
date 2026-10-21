@@ -141,6 +141,10 @@ val get_term_eq : t -> Term.t -> Var.t option
 
 val term_eqs_fold : (Term.t -> Var.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
 
+val term_eqs_fold_function_applications : (Term.t -> Var.t -> 'acc -> 'acc) -> t -> 'acc -> 'acc
+(** same as [term_eqs_fold] restricted to the terms of the form [f(x1, ..., xN)], without going
+    through the other terms *)
+
 val term_eqs_iter : (Term.t -> Var.t -> unit) -> t -> unit
 
 val term_eqs_exists : (Term.t -> Var.t -> bool) -> t -> bool
