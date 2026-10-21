@@ -260,6 +260,9 @@ val is_offset_path_of : Symb.SymbolPath.partial -> t -> bool
 
 val is_length_path_of : Symb.SymbolPath.partial -> t -> bool
 
+val change_byte_unit : from:Z.t option -> to_:Z.t -> t -> t option
+(** See [Bounds.Bound.change_byte_unit] *)
+
 val has_only_non_int_symbols : t -> bool
 
 val is_incr_of : Symb.SymbolPath.partial -> t -> bool

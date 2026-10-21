@@ -11,7 +11,12 @@ void casting_void_ptr(void* p) {
   q[14] = 0;
 }
 
-void FP_call_casting_void_ptr_Ok() {
+void call_casting_void_ptr_Ok() {
   uint64_t p[2];
+  casting_void_ptr(p);
+}
+
+void call_casting_void_ptr_Bad() {
+  uint8_t p[14];
   casting_void_ptr(p);
 }
