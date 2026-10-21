@@ -49,9 +49,9 @@ end = struct
         f !idx acc elt )
 end
 
-type reversed
+type reversed = private ReversedIndex [@@warning "-unused-constructor"]
 
-type not_reversed
+type not_reversed = private NotReversedIndex [@@warning "-unused-constructor"]
 
 (** [Empty] and [Singleton _] can have both directions. We do not attempt to make the representation
     canonic, e.g. [NotReversed [||]], [Reversed [||]], and [Empty] are all allowed despite

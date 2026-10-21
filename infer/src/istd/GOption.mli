@@ -5,9 +5,9 @@
  * LICENSE file in the root directory of this source tree.
  *)
 
-type none
+type none = private NoneIndex
 
-type some
+type some = private SomeIndex
 
 type (_, _) t = GNone : (none, _) t | GSome : 'a -> (some, 'a) t
 
