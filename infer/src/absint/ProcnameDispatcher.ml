@@ -8,14 +8,14 @@
 open! IStd
 
 (** To be used in 'list_constraint *)
-type accept_more
+type accept_more = private AcceptMoreIndex [@@warning "-unused-constructor"]
 
-and end_of_list
+and end_of_list = private EndOfListIndex [@@warning "-unused-constructor"]
 
 (** To be used in 'emptyness *)
-type empty
+type empty = private EmptyIndex [@@warning "-unused-constructor"]
 
-and non_empty
+and non_empty = private NonEmptyIndex [@@warning "-unused-constructor"]
 
 (* Type shorthands *)
 
