@@ -21,11 +21,11 @@ $(CURRENT_REPORT):
 	$(QUIET)$(COPY) src/DiffAnonymousClass.current.java src/DiffAnonymousClass.java
 	$(QUIET)$(call silent_on_success,Testing Config Impact Differential: current,\
 	$(INFER_BIN) --no-filtering --config-impact-analysis-only --config-impact-data-file config_data.json -o $(CURRENT_DIR) \
-	  -- $(JAVAC) -cp $(CLASSPATH)  $(COPIED))
+	  -- $(JAVAC) -cp "$(CLASSPATH)"  $(COPIED))
 
 $(PREVIOUS_REPORT):
 	$(QUIET)$(COPY) src/DiffExample.previous.java src/DiffExample.java
 	$(QUIET)$(COPY) src/DiffAnonymousClass.previous.java src/DiffAnonymousClass.java
 	$(QUIET)$(call silent_on_success,Testing Config Impact Differential: previous,\
 	$(INFER_BIN) --no-filtering --config-impact-analysis-only --config-impact-data-file config_data.json -o $(PREVIOUS_DIR) \
-	  -- $(JAVAC) -cp $(CLASSPATH) $(COPIED))
+	  -- $(JAVAC) -cp "$(CLASSPATH)" $(COPIED))
