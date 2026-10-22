@@ -115,13 +115,16 @@ watch: $(SRC_BUILD_COMMON)
 # The targets below are marked as .PHONY because if you build with one profile `make
 # BUILD_MODE=dev` and then try with another profile `make BUILD_MODE=opt`, make won't
 # trigger a rebuild since it has only partial view on the dependencies.
+#
+# They are names rather than the paths of the executables, as on Windows the native one is
+# $(INFER_BIN) itself.
 
-.PHONY: $(INFER_BIN).exe
-$(INFER_BIN).exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
+.PHONY: infer_exe
+infer_exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(QUIET)$(DUNE_BUILD) $(INFER_MAIN).exe
 
-.PHONY: $(INFER_BIN).bc.exe
-$(INFER_BIN).bc.exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
+.PHONY: infer_bc_exe
+infer_bc_exe: $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 	$(QUIET)$(DUNE_BUILD) $(INFER_MAIN).bc.exe
 
 .PHONY: $(INFERTOP_BIN) toplevel
@@ -135,19 +138,19 @@ $(CHECKCOPYRIGHT_BIN): $(SRC_BUILD_COMMON) $(MAKEFILE_LIST)
 checkCopyright: $(CHECKCOPYRIGHT_BIN)
 
 .PHONY: infer
-infer: $(INFER_BIN).exe
-	$(INSTALL_PROGRAM) -C $(INFER_BIN).exe $(INFER_BIN)
+infer: infer_exe
+	$(INSTALL_PROGRAM) -C $(INFER_NATIVE_EXE) $(INFER_BIN)
 	$(MAKE) $(INFER_BIN_ALIASES)
 
 .PHONY: byte
-byte: $(INFER_BIN).bc.exe
-	$(INSTALL_PROGRAM) -C $(INFER_BIN).bc.exe $(INFER_BIN)
+byte: infer_bc_exe
+	$(INSTALL_PROGRAM) -C $(INFER_BYTE_EXE) $(INFER_BIN)
 	$(MAKE) $(INFER_BIN_ALIASES)
 
-INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias))
-$(INFER_BIN_ALIASES): Makefile $(BIN_DIR)/$(INFER_MAIN)
+INFER_BIN_ALIASES = $(foreach alias,$(INFER_COMMANDS),$(BIN_DIR)/$(alias)$(EXE))
+$(INFER_BIN_ALIASES): Makefile $(INFER_BIN)
 	$(REMOVE) $@
-	$(QUIET)cd $(@D) && $(LN_S) -f infer $(@F)
+	$(QUIET)cd $(@D) && $(LN_S) -f $(INFER_MAIN)$(EXE) $(@F)
 	$(QUIET)touch $@
 
 roots:=Infer
