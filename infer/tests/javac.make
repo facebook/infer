@@ -22,4 +22,4 @@ infer-out$(TEST_SUFFIX)/report.json: $(JAVA_DEPS) $(SOURCES) $(MAKEFILE_LIST)
 	$(QUIET)$(call silent_on_success,Testing infer/java in $(TEST_REL_DIR),\
 	  $(INFER_BIN) --project-root $(PROJECT_ROOT) --dump-duplicate-symbols \
 	    -o $(@D) $(INFER_OPTIONS) -- \
-	    $(JAVAC) $(JAVAC_FLAGS) -cp $(CLASSPATH) $(SOURCES))
+	    $(JAVAC) $(JAVAC_FLAGS) -cp "$(CLASSPATH)" $(SOURCES))

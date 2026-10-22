@@ -87,7 +87,7 @@ infer-out-javac/report.json: $(JAVA_DEPS) $(JAVAC_DIR)
 	$(QUIET)cd $(JAVAC_DIR) && \
 	$(call silent_on_success,Testing Infer/javac is immune to UTF-8 in PWD,\
 	  $(INFER_BIN) --results-dir $(CURDIR)/$(@D) -- \
-	    $(JAVAC) -cp $(CLASSPATH) $(foreach source,$(JAVAC_SOURCES),$(notdir $(source))))
+	    $(JAVAC) -cp "$(CLASSPATH)" $(foreach source,$(JAVAC_SOURCES),$(notdir $(source))))
 
 infer-out-make/report.json: $(CLANG_DEPS) $(MAKE_DIR)
 	$(QUIET)cd $(MAKE_DIR) && \
