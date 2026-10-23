@@ -24,8 +24,8 @@
     { "short_description": "Cross-site Scripting",
       "taint_flows": [
         { "source_kinds": ["Endpoint", "Intent", "IntentFromURI", "UserControlledString", "UserControlledURI"],
-          "sanitizer_kinds": ["Sanitizer"],
-          "sink_kinds": ["HTML"] }
+          "sanitizer_kinds": ["HTMLEscaping", "Sanitizer"],
+          "sink_kinds": ["XSS"] }
       ]
     },
     { "short_description": "Code Injection",
@@ -342,8 +342,12 @@
     },
     { "class_names": ["android.text.Html"],
       "method_names": ["fromHtml"],
-      "kinds": ["HTML"],
+      "kinds": ["XSS"],
       "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["java.io.PrintWriter"],
+      "method_names": ["format", "print", "printf", "println", "write"],
+      "kinds": ["XSS"]
     },
     { "class_names": ["android.util.Log"],
       "method_names": ["e", "println", "w", "wtf"],
@@ -532,6 +536,18 @@
     { "class_names": ["org.apache.commons.text.StringEscapeUtils", "org.apache.commons.lang3.StringEscapeUtils"],
       "method_names": ["escapeEcmaScript"],
       "kinds": ["JavaScriptEscaping"]
+    },
+    { "class_names": ["org.apache.commons.text.StringEscapeUtils", "org.apache.commons.lang3.StringEscapeUtils"],
+      "method_names": ["escapeHtml4"],
+      "kinds": ["HTMLEscaping"]
+    },
+    { "class_names": ["org.springframework.web.util.HtmlUtils"],
+      "method_names": ["htmlEscape"],
+      "kinds": ["HTMLEscaping"]
+    },
+    { "class_names": ["org.owasp.encoder.Encode"],
+      "method_names": ["forHtml", "forHtmlAttribute", "forHtmlContent"],
+      "kinds": ["HTMLEscaping"]
     }
   ]
 }
