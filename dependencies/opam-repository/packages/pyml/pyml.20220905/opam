@@ -5,7 +5,7 @@ homepage: "http://github.com/thierry-martinez/pyml"
 bug-reports: "http://github.com/thierry-martinez/pyml/issues"
 license: "BSD-2-Clause"
 dev-repo: "git+https://github.com/thierry-martinez/pyml.git"
-patches: ["no-stdcompat.patch"]
+patches: ["no-stdcompat.patch" "win-ocaml5.patch"]
 build: [
   ["dune" "subst"] {dev}
   [
@@ -35,4 +35,7 @@ url {
   src: "https://github.com/thierry-martinez/pyml/releases/download/20220905/pyml.20220905.tar.gz"
   checksum: "sha512=7c3a37f9f396e02529769b3db824fc1e8ad63064a1abeaac52f7fbbc4ef698f8a56643e80afc446667f4e885c5a28a8b7e5f695aad126477e895be26eb30b005"
 }
-extra-files: ["no-stdcompat.patch" "sha256=3ed4dca792d397c6c386cb2b1aa40b089de5a2e6cd5bf63bf1463eced5f5c93b"]
+extra-files: [
+  ["no-stdcompat.patch" "sha256=3ed4dca792d397c6c386cb2b1aa40b089de5a2e6cd5bf63bf1463eced5f5c93b"]
+  ["win-ocaml5.patch" "sha256=1c4c4297d83468eef36098b91e296b89284c13d842ea85b3a578aa115ad31e75"]
+]
