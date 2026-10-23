@@ -116,7 +116,8 @@ let of_id = function
   | ChangedFunctions ->
       file "changed_functions.json" ~keep_before_caching_capture:()
   | DBLock ->
-      file "db.lock"
+      (* in use by the database writer for the whole run, which also needs it after the scrub *)
+      file "db.lock" ~keep_before_incremental_analysis:()
   | Debug ->
       directory "captured" ~keep_before_incremental_analysis:()
   | Differential ->

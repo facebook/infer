@@ -145,10 +145,10 @@ let waitpid pid =
       Exit_or_signal.of_unix process_status )
 
 
-let wait_nohang_any () =
+let wait_nohang pid =
   do_maybe_restart ~restart:true (fun () ->
-      let pid, process_status = Unix.waitpid ~mode:[WNOHANG] (-1) in
-      if Int.( = ) 0 pid then None else Some (Pid.of_int pid, Exit_or_signal.of_unix process_status) )
+      let reaped_pid, process_status = Unix.waitpid ~mode:[WNOHANG] (Pid.to_int pid) in
+      if Int.( = ) 0 reaped_pid then None else Some (Exit_or_signal.of_unix process_status) )
 
 
 let fork () =

@@ -147,13 +147,25 @@ let wait_for_updates pool buffer =
 
 let has_running_children = ref false
 
+(* Windows has no signals: [Unix.kill] there only accepts [SIGKILL], which it implements as
+   TerminateProcess, and raises [Invalid_argument] for anything else. Asking for SIGTERM would thus
+   kill nobody, and the [waitpid] below would then wait forever on workers that were never told to
+   go away. Elsewhere, keep SIGTERM so that workers get a chance to run their signal handlers. *)
+let terminate_signal =
+  match Version.build_platform with Windows -> Signal.kill | Linux | Darwin -> Signal.term
+
+
 let killall slots =
   Array.iter slots ~f:(fun {pid} ->
-      try Unix.kill ~pid:(Pid.to_int pid) ~signal:Signal.(to_caml_int term) with _ -> () ) ;
+      try Unix.kill ~pid:(Pid.to_int pid) ~signal:(Signal.to_caml_int terminate_signal)
+      with _ -> () ) ;
   Array.iter slots ~f:(fun {pid} ->
       try IUnix.waitpid pid |> ignore
-      with Unix.Unix_error (ECHILD, _, _) ->
-        (* some children may have died already, it's fine *) () ) ;
+      with Unix.Unix_error _ ->
+        (* some children may have died and been reaped already, it's fine: on Windows a pid is a
+           process handle, which [waitpid] closes on reaping, so waiting again fails there with
+           EBADF rather than with ECHILD *)
+        () ) ;
   has_running_children := false
 
 
@@ -163,16 +175,12 @@ let one_child_died pool ~slot status =
   L.exit 1
 
 
+(* Poll each worker individually instead of waiting for "any" child: that is the only portable
+   option, as Windows has no equivalent of [waitpid(-1)] (see {!IUnix.wait_nohang}). It also means
+   we cannot mistake for a worker a pre-existing child of whoever [exec]ed us. *)
 let has_dead_child pool =
-  let open Option.Monad_infix in
-  IUnix.wait_nohang_any ()
-  >>= fun (dead_pid, status) ->
-  (* Some joker can [exec] an infer binary from a process that already has children. When some of
-     these pre-existing children die they'll get detected here but won't appear in our list of
-     workers. Just return [None] in that case. *)
   Array.find_mapi pool.slots ~f:(fun slot {pid} ->
-      if Pid.equal pid dead_pid then Some slot else None )
-  >>| fun slot -> (slot, status)
+      IUnix.wait_nohang pid |> Option.map ~f:(fun status -> (slot, status)) )
 
 
 let child_is_idle = function Idle -> true | _ -> false
@@ -389,10 +397,19 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
     - once the loop ends, transmits the results of calling [epilogue] to the parent
     - receives orders from [orders_ic], send status updates through [updates_oc]
 
+    [pid] is the pid the orchestrator knows this child by, when that is not the child's own pid.
+
     Children never return. Instead they exit when done. *)
-let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
+let child slot ~pid ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
   WorkerPoolState.set_in_child (Some slot) ;
-  WorkerPoolState.reset_pid () ;
+  (* the orchestrator takes locks on behalf of this child under the pid it knows it by, and
+     {!ProcLocker} tells the locks the child owns from the others by comparing pids, so the child
+     has to answer with the same pid as the orchestrator rather than with its own *)
+  ( match pid with
+  | None ->
+      WorkerPoolState.reset_pid ()
+  | Some pid ->
+      WorkerPoolState.set_pid pid ) ;
   child_prologue () ;
   let send_to_parent (message : 'b worker_message) = marshal_to_pipe updates_oc message in
   let send_final (final_message : 'a final_worker_message) =
@@ -450,7 +467,8 @@ let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
       Unix.close to_child_w ;
       let orders_ic = Unix.in_channel_of_descr to_child_r in
       let updates_oc = Unix.out_channel_of_descr updates_w in
-      child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic
+      (* a forked child has the pid the parent gets from [fork] *)
+      child slot ~pid:None ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic
   | `In_the_parent pid ->
       Unix.close to_child_r ;
       Unix.close updates_w ;
@@ -482,6 +500,7 @@ let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
         UnixLabels.create_process ~prog ~args:[|prog|] ~stdin:to_child_r ~stdout:updates_w
           ~stderr:Unix.stderr )
   in
+  let pid = Pid.of_int pid in
   let down_pipe = Unix.out_channel_of_descr to_child_w in
   Stdlib.set_binary_mode_out down_pipe true ;
   (* Send the closure _after_ the child has been created, so that it may start reading
@@ -489,11 +508,13 @@ let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
      warnings in the comments above ("LIMITATION") do not apply, because the child will
      not use [really_read] to access the contents of the pipe. *)
   let child_thunk ~updates_oc ~orders_ic =
-    child slot ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
+    (* tell the child which pid we know it by: [create_process] answers a process handle rather
+       than a process id on Windows, so it cannot find that out on its own *)
+    child slot ~pid:(Some pid) ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
   in
   Marshal.to_channel down_pipe (child_thunk : child_data) [Closures] ;
   Unix.close to_child_r ;
-  {pid= Pid.of_int pid; down_pipe}
+  {pid; down_pipe}
 
 
 let run_as_child () =

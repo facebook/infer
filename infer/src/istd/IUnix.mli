@@ -57,7 +57,12 @@ val getpid : unit -> Pid.t
 
 val waitpid : Pid.t -> Exit_or_signal.t
 
-val wait_nohang_any : unit -> (Pid.t * Exit_or_signal.t) option
+val wait_nohang : Pid.t -> Exit_or_signal.t option
+(** poll a specific child: [None] if it is still running.
+
+    Prefer this over waiting for "any" child ([waitpid(-1)]): on Windows a pid is a process
+    {i handle} and there is no way to wait for an unspecified child, so [-1] is silently taken to
+    mean the pseudo-handle of the current process and the call always reports "still running". *)
 
 val fork : unit -> [`In_the_child | `In_the_parent of Pid.t]
 

@@ -24,4 +24,6 @@ let pid = ref (lazy (IUnix.getpid ()))
 
 let reset_pid () = pid := lazy (IUnix.getpid ())
 
+let set_pid new_pid = pid := lazy new_pid
+
 let get_pid () = Lazy.force !pid

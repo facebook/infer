@@ -24,3 +24,8 @@ val update_heap_words : (unit -> unit) ref
 val get_pid : unit -> Pid.t
 
 val reset_pid : unit -> unit
+
+val set_pid : Pid.t -> unit
+(** make this worker answer [get_pid] with the pid its orchestrator knows it by instead of its own;
+    the two differ on Windows, where [Unix.create_process] answers a process handle rather than a
+    process id *)
