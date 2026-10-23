@@ -13,10 +13,16 @@ jobs:
           - ubuntu-latest
           - macos-26
           - macos-26-intel
+          - windows-2025
         ocaml-compiler:
           - ocaml-variants.5.4.1+options
       fail-fast: false
     runs-on: ${{ matrix.os }}
+    defaults:
+      run:
+        # The build needs bash and GNU make. On Windows, setup-ocaml puts the bin directory of
+        # opam's internal Cygwin first on the PATH, so this is Cygwin's bash.
+        shell: bash
     steps:
       - name: Checkout code
         uses: actions/checkout@v6
@@ -35,6 +41,32 @@ jobs:
         uses: ocaml/setup-ocaml@v3
         with:
           ocaml-compiler: ${{ matrix.ocaml-compiler }}
+          # Both inputs are ignored on non-Windows runners.
+          windows-compiler: mingw
+          windows-environment: cygwin
+
+      - name: Install Windows dependencies
+        if: runner.os == 'Windows'
+        # autogen.sh needs autoconf and automake, which opam's internal Cygwin does not include. The
+        # other packages are the system dependencies of infer's opam dependencies (gmp, sqlite3,
+        # zlib, pkg-config), which opam would otherwise install itself, from a Cygwin shell.
+        # Cygwin's installer runs from PowerShell so that no Cygwin process is running meanwhile.
+        shell: pwsh
+        run: |
+          $cygwin = Join-Path $env:OPAMROOT .cygwin
+          $setup = Join-Path $cygwin setup-x86_64.exe
+          if (-not (Test-Path $setup)) {
+            Invoke-WebRequest https://cygwin.com/setup-x86_64.exe -OutFile $setup
+          }
+          $packages = @(
+            'autoconf', 'automake', 'make', 'pkgconf', 'mingw64-x86_64-gmp', 'mingw64-i686-gmp',
+            'mingw64-x86_64-sqlite3', 'mingw64-x86_64-zlib'
+          ) -join ','
+          & $setup --quiet-mode --no-shortcuts --no-admin --root (Join-Path $cygwin root) `
+            --local-package-dir (Join-Path $cygwin cache) `
+            --site https://mirrors.kernel.org/sourceware/cygwin/ --packages $packages |
+            Out-Default
+          if ($LASTEXITCODE -ne 0) { exit $LASTEXITCODE }
 
       - run: ./build-infer.sh --yes --user-opam-switch java
       - run: make devsetup
