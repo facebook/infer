@@ -254,7 +254,7 @@ install_opam_deps () {
 #   - our own LLVM OCaml bindings, which we need regardless of the LLVM toolchain used to provide
 #     the LLVM libraries;
 #   - pyml.20220905 with a patch that removes its dependency on stdcompat, whose latest release
-#     (21.1) requires OCaml < 5.4;
+#     (21.1) requires OCaml < 5.4, and one that fixes its Windows stubs for OCaml 5;
 #   - base_bigstring.v0.17.0 with a memmem() fallback: opam-repository marks it as unavailable on
 #     win32, because the Windows C runtimes have no memmem();
 #   - ANSITerminal.0.8.5 with fixes for its Windows stubs, which mingw-w64 GCC 14 does not compile.
