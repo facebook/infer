@@ -147,13 +147,17 @@ let wait_for_updates pool buffer =
 
 let has_running_children = ref false
 
+let terminate_signal =
+  match Version.build_platform with Windows -> Signal.kill | Linux | Darwin -> Signal.term
+
+
 let killall slots =
   Array.iter slots ~f:(fun {pid} ->
-      try Unix.kill ~pid:(Pid.to_int pid) ~signal:Signal.(to_caml_int term) with _ -> () ) ;
+      try Unix.kill ~pid:(Pid.to_int pid) ~signal:(Signal.to_caml_int terminate_signal)
+      with _ -> () ) ;
   Array.iter slots ~f:(fun {pid} ->
       try IUnix.waitpid pid |> ignore
-      with Unix.Unix_error (ECHILD, _, _) ->
-        (* some children may have died already, it's fine *) () ) ;
+      with Unix.Unix_error _ -> (* some children may have died already, it's fine *) () ) ;
   has_running_children := false
 
 
@@ -164,15 +168,8 @@ let one_child_died pool ~slot status =
 
 
 let has_dead_child pool =
-  let open Option.Monad_infix in
-  IUnix.wait_nohang_any ()
-  >>= fun (dead_pid, status) ->
-  (* Some joker can [exec] an infer binary from a process that already has children. When some of
-     these pre-existing children die they'll get detected here but won't appear in our list of
-     workers. Just return [None] in that case. *)
   Array.find_mapi pool.slots ~f:(fun slot {pid} ->
-      if Pid.equal pid dead_pid then Some slot else None )
-  >>| fun slot -> (slot, status)
+      IUnix.wait_nohang pid |> Option.map ~f:(fun status -> (slot, status)) )
 
 
 let child_is_idle = function Idle -> true | _ -> false
