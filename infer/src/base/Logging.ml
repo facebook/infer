@@ -190,6 +190,14 @@ let reset_formatters () =
   register_epilogue ()
 
 
+let stop_logging_to_file () =
+  Option.iter !log_file ~f:(fun (file_fmt, chan) ->
+      log_file := None ;
+      reset_formatters () ;
+      F.pp_print_flush (DLS.get file_fmt) () ;
+      Out_channel.close chan )
+
+
 let () = register_epilogue ()
 
 let log ~to_console ?(to_file = true) (lazy formatters) =

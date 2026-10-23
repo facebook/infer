@@ -146,7 +146,11 @@ let scrub_for_incremental () =
 let scrub_for_caching () =
   let cache_capture = Config.genrule_mode || Option.exists Config.buck_mode ~f:BuckMode.is_clang in
   if cache_capture then DBWriter.canonicalize () ;
-  (* make sure we are done with the database *)
+  (* make sure we are done with the database; this also releases the database lock file, which
+     Windows refuses to delete below while it is still open *)
+  DBWriter.terminate () ;
   Database.db_close () ;
+  (* close the log file too, unless it belongs to the results dir of a parent infer process *)
+  if String.equal Config.toplevel_results_dir Config.results_dir then L.stop_logging_to_file () ;
   Utils.rm_all_in_dir Config.results_dir
     ~except:(ResultsDirEntryName.to_keep_before_caching_capture ~results_dir:Config.results_dir)
