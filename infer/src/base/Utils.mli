@@ -143,7 +143,7 @@ val inline_argument_files : string list -> string list
     been extracted *)
 
 val cpus : int
-(** Number of CPUs as computed by [Setcore.numcores]. *)
+(** Number of CPUs as computed by [Domain.recommended_domain_count]. *)
 
 val zip_fold : init:'a -> f:('a -> Zip.in_file -> Zip.entry -> 'a) -> zip_filename:string -> 'a
 (** fold over each file in the given [zip_filename]. *)

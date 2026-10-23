@@ -42,7 +42,6 @@
 -cclib -lcomprmarsh
 -cclib -lcamlzip
 -cclib -lz
--cclib -lparmap_stubs
 -cclib -lmtime_clock_stubs
 -cclib -lrt
 -cclib -lthreadsnat

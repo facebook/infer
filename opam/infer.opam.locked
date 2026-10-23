@@ -98,7 +98,6 @@ depends: [
   "octavius" {= "1.2.2"}
   "ounit" {= "2.2.7"}
   "ounit2" {= "2.2.7"}
-  "parmap" {= "1.2.5"}
   "parsexp" {= "v0.17.0"}
   "ppx_assert" {= "v0.17.0"}
   "ppx_base" {= "v0.17.0"}

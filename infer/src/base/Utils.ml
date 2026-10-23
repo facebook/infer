@@ -467,7 +467,7 @@ let inline_argument_files args =
   List.concat_map ~f:expand_arg args
 
 
-let cpus = Setcore.numcores ()
+let cpus = Domain.recommended_domain_count ()
 
 let zip_fold ~init ~f ~zip_filename =
   let file_in = Zip.open_in zip_filename in
