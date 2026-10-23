@@ -347,6 +347,9 @@ AC_ARG_VAR([OPAMROOT], [Root of the local opam installation.])
 AC_ARG_VAR([OPAMSWITCH], [Opam switch used for building infer.])
 
 AC_CHECK_TOOL([OPAM], [opam], [no])
+# on Windows, run opam through a wrapper that drops the \r opam ends its lines with
+AS_IF([test "$OPAM" != "no" && test x"$WINDOWS_BUILD" = x"yes"],
+      [OPAM="$(cd "$srcdir" && pwd)/scripts/opam_lf"])
 AS_IF([test "$OPAM" != "no"], [
   AC_MSG_CHECKING([opam version])
   opam_version=$("$OPAM" --version)

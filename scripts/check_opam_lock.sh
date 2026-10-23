@@ -12,7 +12,8 @@
 set -e
 set -o pipefail
 
-OPAM=${OPAM:-opam}
+# opam_lf drops the \r that opam ends its lines with on Windows
+OPAM=${OPAM:-"$(dirname "$0")"/opam_lf}
 if [ $# -eq 0 ]; then
   set -- "$(dirname "$0")"/../opam/infer.opam.locked
 fi
