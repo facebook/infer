@@ -84,6 +84,9 @@ val flush_formatters : unit -> unit
 val reset_formatters : unit -> unit
 (** Reset the formatters used for logging. Call this in the child after you fork(2). *)
 
+val stop_logging_to_file : unit -> unit
+(** Close the log file, and log only to the console from now on. *)
+
 (** Delayed printing (HTML debug, ...) *)
 
 type delayed_prints
