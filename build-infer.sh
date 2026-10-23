@@ -256,7 +256,8 @@ install_opam_deps () {
 #   - pyml.20220905 with a patch that removes its dependency on stdcompat, whose latest release
 #     (21.1) requires OCaml < 5.4;
 #   - base_bigstring.v0.17.0 with a memmem() fallback: opam-repository marks it as unavailable on
-#     win32, because the Windows C runtimes have no memmem().
+#     win32, because the Windows C runtimes have no memmem();
+#   - ANSITerminal.0.8.5 with fixes for its Windows stubs, which mingw-w64 GCC 14 does not compile.
 # It must be set up before installing the dependencies.
 setup_local_opam_repo () {
     # `opam repo set-url` only refreshes the URL of an existing repo definition; it
