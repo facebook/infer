@@ -17,4 +17,4 @@ default: test
 $(INFER_OUT)/report.json: $(SOURCES) $(INFER_BIN)
 	$(INFER_BIN) --quiet --no-progress-bar --pulse-only --no-pulse-force-continue \
           --debug-exceptions --dump-duplicate-symbols -o $(INFER_OUT) $(CAPTURE_CMD) \
-          --capture-textual $(HACK_LIB_DIR)/models.sil
+          --capture-textual $(call native_path,$(HACK_LIB_DIR)/models.sil)
