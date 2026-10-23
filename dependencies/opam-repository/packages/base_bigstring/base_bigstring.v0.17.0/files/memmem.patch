@@ -1,0 +1,32 @@
+--- a/src/base_bigstring_stubs.c
++++ b/src/base_bigstring_stubs.c
+@@ -221,6 +221,29 @@
+   return ptr_to_offset(start, v_pos, r);
+ }
+ 
++/* memmem() is a GNU extension that the Windows C runtimes do not provide. This fallback has the
++   same semantics as glibc's: an empty needle matches at the start of the haystack. */
++#if defined(__MINGW32__) || defined(_MSC_VER)
++static void *bigstring_memmem_fallback(const void *haystack, size_t haystacklen,
++                                       const void *needle, size_t needlelen)
++{
++  const char *h = (const char *) haystack;
++  const char *n = (const char *) needle;
++  const char *last;
++  const char *p;
++
++  if (needlelen == 0) return (void *) h;
++  if (haystacklen < needlelen) return NULL;
++
++  last = h + haystacklen - needlelen;
++  for (p = h; p <= last; p++) {
++    if (*p == *n && memcmp(p, n, needlelen) == 0) return (void *) p;
++  }
++  return NULL;
++}
++#define memmem bigstring_memmem_fallback
++#endif
++
+ CAMLprim value bigstring_memmem(value v_haystack, value v_needle,
+                                 value v_haystack_pos, value v_haystack_len,
+                                 value v_needle_pos, value v_needle_len)
