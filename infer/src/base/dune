@@ -33,7 +33,6 @@
   bheap
   memtrace
   mtime.clock.os
-  parmap
   ppx_show.runtime
   sqlite3
   tdigest
