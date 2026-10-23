@@ -264,6 +264,12 @@ AC_SUBST([HAS_OBJC])
 AC_SUBST([SDKROOT])
 
 
+# On Windows, the OCaml switch and its C libraries (zlib, ...) are built with mingw-w64 gcc, so use
+# that one rather than a clang that may be on the PATH but target MSVC. `./configure CC=...` still
+# takes precedence.
+AS_IF([test x"$WINDOWS_BUILD" = x"yes" && test x"$CC" = x],
+      [AC_CHECK_PROGS([CC], [x86_64-w64-mingw32-gcc gcc])])
+
 # prefer clang over gcc because the plugins makes use of
 # clang-specific #pragma's
 AC_PROG_CC(clang gcc)
