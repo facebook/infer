@@ -13,6 +13,11 @@ set -u
 
 SCRIPT_DIR="$( cd "$( dirname "${BASH_SOURCE[0]}" )" && pwd )"
 INFER_ROOT="$SCRIPT_DIR"
+if command -v cygpath > /dev/null; then
+    OPAM_INFER_ROOT=$(cygpath -m "$INFER_ROOT")
+else
+    OPAM_INFER_ROOT="$INFER_ROOT"
+fi
 DEPENDENCIES_DIR="$INFER_ROOT/facebook/dependencies"
 PLATFORM="$(uname)"
 SANDCASTLE=${SANDCASTLE:-}
@@ -214,7 +219,7 @@ setup_local_opam_switch () {
     opam var root 1>/dev/null 2>/dev/null || opam init --reinit --bare --no-setup
     if [ ! -d "$INFER_ROOT/_opam" ]; then
         echo "creating local opam switch in $INFER_ROOT/_opam... " >&2
-        opam switch create "$INFER_ROOT" --no-install $INFER_OPAM_SWITCH_OPTIONS
+        opam switch create "$OPAM_INFER_ROOT" --no-install $INFER_OPAM_SWITCH_OPTIONS
     else
         echo "using existing local opam switch in $INFER_ROOT/_opam" >&2
     fi
@@ -226,10 +231,10 @@ install_opam_deps () {
         locked=.locked
     fi
 
-    opam pin add --no-action charon "$INFER_ROOT"/dependencies/charon
-    opam pin add --no-action name_matcher_parser "$INFER_ROOT"/dependencies/charon
-    opam pin add --no-action ppx_show "$INFER_ROOT"/dependencies/ppx_show
-    opam pin add --no-action pyml "$INFER_ROOT"/dependencies/pyml
+    opam pin add --no-action charon "$OPAM_INFER_ROOT"/dependencies/charon
+    opam pin add --no-action name_matcher_parser "$OPAM_INFER_ROOT"/dependencies/charon
+    opam pin add --no-action ppx_show "$OPAM_INFER_ROOT"/dependencies/ppx_show
+    opam pin add --no-action pyml "$OPAM_INFER_ROOT"/dependencies/pyml
     # camlzip checks that it is within the required version that the zip/jar file declares as
     # needed to decompress it:
     #   https://github.com/xavierleroy/camlzip/blob/dd86042ac5eba8ba21e3d98b2f3e3dd82fc14033/zip.ml#L197-L198
@@ -242,8 +247,8 @@ install_opam_deps () {
     # initialized but for non-Sandcastle builds that point is inside build-infer.sh so we need
     # to pin camlzip after the fact instead; this will only rebuild javalib and sawja and only
     # the first time that we pin camlzip)
-    opam pin add --no-action camlzip "$INFER_ROOT"/dependencies/camlzip
-    opam install --deps-only "$INFER_ROOT"/opam/infer.opam$locked
+    opam pin add --no-action camlzip "$OPAM_INFER_ROOT"/dependencies/camlzip
+    opam install --deps-only "$OPAM_INFER_ROOT"/opam/infer.opam$locked
 }
 
 # regardless of the LLVM toolchain used to provide the LLVM libraries, we need our own LLVM OCaml
@@ -254,8 +259,9 @@ setup_local_opam_repo () {
     # after an OCaml upgrade) would therefore never see the local LLVM packages and
     # `opam install llvm.<version>` would fail. So always `opam repo add` as well to
     # make sure the repo is selected for the current switch (it is idempotent).
-    opam repo set-url local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository 2>/dev/null || true
-    opam repo add local-llvm "$INFER_ROOT"/dependencies/llvm/opam-repository
+    opam repo set-url local-llvm "$OPAM_INFER_ROOT"/dependencies/llvm/opam-repository \
+        2>/dev/null || true
+    opam repo add local-llvm "$OPAM_INFER_ROOT"/dependencies/llvm/opam-repository
 }
 
 echo "initializing opam... " >&2
