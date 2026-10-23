@@ -1,0 +1,35 @@
+2021/05/02 (RDC)
+        Update dune related files (thanks to Gabriel Radanne).
+        Fixed file descriptor leakage (read pipe end not closed in mapper), reported by Julia Lawall.
+
+2021/04/24 (RDC)
+        Include fix in bytearray.ml to avoid corruption on 32bit architectures
+        (drops support for OCaml 4.02.3, thanks to Jerry James)
+
+2021/01/09 (RDC)
+        Major enhancement: add support for returning results in the right order from
+        the calls to parmap/parmapi/array_parmap/array_parmapi even when the
+	chunksize parameter is used. This can be accomplished using the keeporder
+	parameter.
+	Documentation, tests and functions parameters updated accordingly.
+
+2020/01/23 (RDC)
+	Integrated major rewriting of the build system, moving to dune;
+	dropped compatibility with pre-4.02 OCaml versions. Thanks to Gabriel Radanne.
+
+2011/11/30 (RDC)
+        Version 0.9.8 contains the following major new features w.r.t. 0.9.4
+           - a chunksize parameter can be used to control the granularity of the
+             parallelism: each worker will handle a series of chunks of this size
+             and ask for them when ready, thus allowing the system to achieve
+             automatic load balancing
+           - very specialised versions of the map function are now available for
+             arrays and float arrays, allowing to obtain significant speed-up even
+             on relatively light computations
+           - autoconf and ocamlbuild harness should simplify compilation and installation.
+
+
+2011/08/30 (RDC)
+        internally convert lists to array to avoid quadratic penalty in execution time on long lists,
+        thanks to Paul Vernaza <pvernaza@andrew.cmu.edu> for pointing out this issue;
+        added 'a sequence type to allow using efficiently the library both with lists and arrays.

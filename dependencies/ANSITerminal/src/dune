@@ -1,0 +1,18 @@
+(library
+ (name          ANSITerminal)
+ (public_name   ANSITerminal)
+ (modules       ANSITerminal ANSITerminal_common)
+ (foreign_stubs (language c) (names ANSITerminal_stubs))
+ (synopsis "Basic control of ANSI compliant terminals and the windows shell")
+ (libraries unix bytes))
+
+(rule
+ (targets ANSITerminal.ml ANSITerminal_stubs.c)
+ (deps    ANSITerminal_unix.ml ANSITerminal_win.ml
+          ANSITerminal_unix_stubs.c ANSITerminal_win_stubs.c
+          (:p choose_implementation.exe))
+ (action  (run %{p})))
+
+(executable
+ (name    choose_implementation)
+ (modules choose_implementation))

@@ -1,0 +1,14 @@
+(executable
+ (name mandels)
+ (modules mandels)
+ (flags
+  (:standard -w -3-27))
+ (libraries parmap graphics unix bigarray))
+
+;(executable
+; (name mandels_sdl)
+; (public_name ocaml-parmap-mandels_sdl)
+; (modules mandels_sdl)
+; (flags
+;  (:standard -w -3-27))
+; (libraries parmap graphics unix bigarray sdl))

@@ -226,10 +226,22 @@ install_opam_deps () {
         locked=.locked
     fi
 
+    # charon and name_matcher_parser, used by the Rust frontend to read Charon's output, are not in
+    # opam-repository. We vendor a Charon commit because Meta CI does not allow GitHub downloads.
     opam pin add --no-action charon "$INFER_ROOT"/dependencies/charon
     opam pin add --no-action name_matcher_parser "$INFER_ROOT"/dependencies/charon
+    # ppx_show and pyml depend on stdcompat, whose latest release (21.1) requires OCaml < 5.4. We
+    # vendor them with the stdcompat dependency removed. These pins can go once a stdcompat release
+    # supports OCaml 5.4.
     opam pin add --no-action ppx_show "$INFER_ROOT"/dependencies/ppx_show
     opam pin add --no-action pyml "$INFER_ROOT"/dependencies/pyml
+    # The latest releases of parmap and ANSITerminal fail to compile under mingw with GCC 14. We
+    # vendor them with fixes that no release contains yet: `long` becomes `intnat` in parmap, a real
+    # memory corruption on 64-bit Windows, and ANSITerminal's Windows-only stubs get three type and
+    # declaration fixes. They are pinned on every platform so that the same code is built
+    # everywhere.
+    opam pin add --no-action parmap "$INFER_ROOT"/dependencies/parmap
+    opam pin add --no-action ANSITerminal "$INFER_ROOT"/dependencies/ANSITerminal
     # camlzip checks that it is within the required version that the zip/jar file declares as
     # needed to decompress it:
     #   https://github.com/xavierleroy/camlzip/blob/dd86042ac5eba8ba21e3d98b2f3e3dd82fc14033/zip.ml#L197-L198

@@ -1,0 +1,48 @@
+{
+    "@context": "https://doi.org/10.5063/schema/codemeta-2.0",
+    "@type": "SoftwareSourceCode",
+    "license": "https://spdx.org/licenses/LGPL-2.0-only",
+    "codeRepository": "git+https://github.com/rdicosmo/parmap.git",
+    "datePublished": "2011-07-18",
+    "dateModified": "2022-01-03",
+    "issueTracker": "https://github.com/rdicosmo/parmap/issues",
+    "name": "Parmap",
+    "version": "1.2.5",
+    "applicationCategory": "Parallel computing",
+    "developmentStatus": "active",
+    "referencePublication": "https://doi.org/10.1016/j.procs.2012.04.202",
+    "programmingLanguage": [
+        "OCaml"
+    ],
+    "operatingSystem": [
+        "Linux",
+        "MacOS"
+    ],
+    "relatedLink": [
+        "https://opam.ocaml.org/packages/parmap/"
+    ],
+    "author": [
+        {
+            "@type": "Person",
+            "@id": "https://orcid.org/ 0000-0002-7493-5349",
+            "givenName": "Roberto",
+            "familyName": "Di Cosmo",
+            "email": "roberto@dicosmo.org",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "Inria and University Paris Diderot"
+            }
+        },
+        {
+            "@type": "Person",
+            "@id": "https://orcid.org/ 0000-0002-7433-376X",
+            "givenName": "Marco",
+            "familyName": "Danelutto",
+            "email": "marco.danelutto@unipi.it",
+            "affiliation": {
+                "@type": "Organization",
+                "name": "University of Pisa"
+            }
+        }
+    ]
+}

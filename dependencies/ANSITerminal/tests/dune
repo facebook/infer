@@ -1,0 +1,7 @@
+(executables
+ (names     showcolors test)
+ (libraries ANSITerminal))
+
+(alias
+ (name runtest)
+ (deps showcolors.exe test.exe))

@@ -1,0 +1,22 @@
+(library
+ (name utils)
+ (modules utils)
+ (flags
+  (:standard -w -35-27))
+ (libraries parmap))
+
+(test
+ (name floatscale)
+ (modules floatscale)
+ (enabled_if %{arch_sixtyfour})
+ (flags (:standard -w -35-27))
+ (libraries utils parmap))
+
+(tests
+ (names testexceptions simplescale simplescale_array simplescalefold
+   simplescalemapfold)
+ (modules testexceptions simplescale simplescale_array simplescalefold
+   simplescalemapfold)
+ (flags
+  (:standard -w -35-27))
+ (libraries utils parmap))

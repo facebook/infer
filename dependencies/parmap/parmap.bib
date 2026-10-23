@@ -1,0 +1,40 @@
+@comment{For best rendering of software in a bibliography, please use biblatex with the biblatex-software package}
+@comment{More information available at https://ctan.org/pkg/biblatex-software?lang=en}
+@comment{See also: https://www.softwareheritage.org/howto-archive-and-reference-your-code/}
+
+@software {parmap,
+  title = {The Parmap library},
+  author = {Di Cosmo, Roberto and Marco Danelutto},
+  date = {2012},
+  institution = {{Inria} and {University of Paris} and {University of Pisa}},
+  license = {LGPL-2.0},
+  url = {https://rdicosmo.github.io/parmap/},
+  repository= {https://github.com/rdicosmo/parmap},
+}
+
+@comment{For citing a specific version, please use an entry like the following one}
+@comment{You can get the proper SWHID browsing https://archive.softwareheritage.org/browse/origin/directory/?origin_url=https://github.com/rdicosmo/parmap}
+
+@softwareversion {parmap-1.2.5,
+  crossref = {parmap},
+  date = {2022},
+  version = {1.2.5},
+  swhid = {swh:1:dir:95845404f319ba5e5c7a2b10ec018de3658c6035;
+      origin=https://github.com/rdicosmo/parmap;
+      visit=swh:1:snp:ee5526130c00c23efec58c5b3c81de1c450dd703;
+      anchor=swh:1:rev:65f9642ddc5c77e91c4131895e32b7c0c771dd7e},
+}
+
+@comment{For citing a code fragment, please use an entry like the following one}
+@comment{You can get the proper SWHID browsing https://archive.softwareheritage.org/browse/origin/directory/?origin_url=https://github.com/rdicosmo/parmap}
+
+@codefragment {simplemapper,
+  subtitle = {Core mapping routine},
+  swhid = {swh:1:cnt:3b997e8ef2e38d5b31fb353214a54686e72f0870;
+      origin=https://github.com/rdicosmo/parmap;
+      visit=swh:1:snp:ee5526130c00c23efec58c5b3c81de1c450dd703;
+      anchor=swh:1:rev:65f9642ddc5c77e91c4131895e32b7c0c771dd7e;
+      path=/src/parmap.ml;
+      lines=192-237},
+  crossref = {parmap-1.2.5}
+}

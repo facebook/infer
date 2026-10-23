@@ -1,0 +1,18 @@
+(library
+ (public_name parmap)
+ (synopsis "Parallel map primitive for multicores")
+ (wrapped false)
+ (libraries bigarray unix)
+ (foreign_stubs (language c) (names bytearray_stubs setcore_stubs)))
+
+(documentation
+  (package parmap)
+  (mld_files index)
+)
+
+(rule
+ (targets parmap_compat.ml setcore_stubs.h)
+ (deps
+  (:discover ../config/discover.exe))
+ (action
+  (run %{discover})))

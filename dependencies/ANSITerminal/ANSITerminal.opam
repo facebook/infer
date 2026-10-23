@@ -1,0 +1,27 @@
+opam-version: "2.0"
+version: "0.8.5"
+maintainer: "Christophe Troestler <Christophe.Troestler@umons.ac.be>"
+authors: [ "Christophe Troestler"
+           "Vincent Hugot" ]
+license: "LGPL-3.0-or-later WITH OCaml-LGPL-linking-exception"
+homepage: "https://github.com/Chris00/ANSITerminal"
+dev-repo: "git+https://github.com/Chris00/ANSITerminal.git"
+bug-reports: "https://github.com/Chris00/ANSITerminal/issues"
+doc: "https://Chris00.github.io/ANSITerminal/doc"
+tags: [ "terminal"  ]
+build: [
+  ["dune" "subst"] {dev}
+  ["dune" "build" "-p" name "-j" jobs]
+  ["dune" "runtest" "-p" name "-j" jobs] {with-test}
+]
+depends: [
+  "ocaml" {os != "win32" | >= "4.04"}
+  "dune" {>= "2.0"}
+  "base-bytes"
+  "base-unix"
+]
+synopsis: "Basic control of ANSI compliant terminals and the windows shell"
+description: """
+ANSITerminal is a module allowing to use the colors and cursor
+movements on ANSI terminals. It also works on the windows shell (but
+this part is currently work in progress)."""
