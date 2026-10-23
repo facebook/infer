@@ -33,7 +33,10 @@ let compile compiler build_prog build_args =
     let file = IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "javac_args" "" in
     let quoted_file_args =
       List.map file_args ~f:(fun arg ->
-          if String.contains arg '\'' then arg else F.sprintf "'%s'" arg )
+          if String.contains arg '\'' then arg
+          else
+            (* javac reads a backslash in a quoted string as an escape character *)
+            F.sprintf "'%s'" (String.substr_replace_all arg ~pattern:"\\" ~with_:"\\\\") )
     in
     Out_channel.with_file file ~f:(fun oc -> Out_channel.output_lines oc quoted_file_args) ;
     file
@@ -44,12 +47,32 @@ let compile compiler build_prog build_args =
   let verbose_out_file =
     IFilename.temp_file ~in_dir:(ResultsDir.get_path Temporary) "javac" ".out"
   in
+  let run_and_capture_stdout cmd =
+    let stdout_read, stdout_write = Unix.pipe () in
+    let stdout_in = Unix.in_channel_of_descr stdout_read in
+    let f () =
+      let pid =
+        let stderr_fd =
+          IUnix.openfile verbose_out_file ~mode:[O_WRONLY; O_CREAT; O_TRUNC] ~perm:0o600
+        in
+        Exception.try_finally
+          ~f:(fun () ->
+            UnixLabels.create_process ~prog:(List.hd_exn cmd) ~args:(Array.of_list cmd)
+              ~stdin:Unix.stdin ~stdout:stdout_write ~stderr:stderr_fd )
+          ~finally:(fun () ->
+            (* the read below only ends once every write end is closed *)
+            Unix.close stdout_write ;
+            Unix.close stderr_fd )
+      in
+      let log = In_channel.input_all stdout_in in
+      (IUnix.waitpid (IUnix.Pid.of_int pid), log)
+    in
+    Exception.try_finally ~f ~finally:(fun () -> In_channel.close stdout_in)
+  in
   let try_run cmd error_k =
-    let shell_cmd = List.map ~f:Escape.escape_shell cmd |> String.concat ~sep:" " in
-    let shell_cmd_redirected = Printf.sprintf "%s 2>'%s'" shell_cmd verbose_out_file in
-    L.(debug Capture Quiet) "Trying to execute: %s@." shell_cmd_redirected ;
-    match Utils.with_process_in shell_cmd_redirected In_channel.input_all with
-    | log, Error err -> (
+    L.(debug Capture Quiet) "Trying to execute: %a@." Pp.cli_args cmd ;
+    match run_and_capture_stdout cmd with
+    | Error err, log -> (
       match error_k with
       | Some k ->
           L.(debug Capture Quiet)
@@ -62,12 +85,12 @@ let compile compiler build_prog build_args =
           L.(die UserError)
             "@\n\
              *** Failed to execute compilation command: %s@\n\
-             *** Command: %s@\n\
+             *** Command: %a@\n\
              *** Output:@\n\
              %s%s@\n\
              *** Infer needs a working compilation command to run.@."
             (IUnix.Exit_or_signal.to_string_hum (Error err))
-            shell_cmd log verbose_errlog )
+            Pp.cli_args cmd log verbose_errlog )
     | exception exn ->
         IExn.reraise_if exn ~f:(fun () ->
             match error_k with
@@ -77,7 +100,7 @@ let compile compiler build_prog build_args =
                 false
             | None ->
                 true )
-    | log, Ok () ->
+    | Ok (), log ->
         L.(debug Capture Quiet) "*** Success. Logs:@\n%s" log
   in
   let fallback () = try_run ("javac" :: cli_file_args) None in

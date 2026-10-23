@@ -90,14 +90,20 @@ let read_modules_1 path =
   Epilogues.register
     ~f:(fun () -> Utils.rmtree temp_dir)
     ~description:("Remove the temp dir for java modules: " ^ temp_dir) ;
-  let jimage_cmd =
-    ["jimage"; "extract"; F.sprintf "--dir=%s" temp_dir; path]
-    |> List.map ~f:Escape.escape_shell |> String.concat ~sep:" "
+  let jimage_cmd = ["jimage"; "extract"; F.sprintf "--dir=%s" temp_dir; path] in
+  L.debug Capture Medium "reading Java modules with: %a@\n" Pp.cli_args jimage_cmd ;
+  let jimage_succeeded =
+    match
+      UnixLabels.create_process ~prog:"jimage" ~args:(Array.of_list jimage_cmd) ~stdin:Unix.stdin
+        ~stdout:Unix.stdout ~stderr:Unix.stderr
+    with
+    | pid ->
+        Result.is_ok (IUnix.waitpid (IUnix.Pid.of_int pid))
+    | exception Unix.Unix_error _ ->
+        false
   in
-  L.debug Capture Medium "reading Java modules with: %s@\n" jimage_cmd ;
-  let jimage_ret = Stdlib.Sys.command jimage_cmd in
   let root_paths = ref [] in
-  if Int.equal jimage_ret 0 then
+  if jimage_succeeded then
     Utils.iter_dir temp_dir ~f:(fun path -> root_paths := path :: !root_paths)
   else L.debug Capture Medium "Failed to run jimage for reading java modules.@\n" ;
   !root_paths
