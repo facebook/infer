@@ -82,7 +82,57 @@ let create_outfile fname =
 (** close an outfile *)
 let close_outf outf = Out_channel.close outf.out_c
 
+(** a Windows path in the [C:/dir/file] form: with '/' as separator, and without the extended-length
+    prefix *)
+let of_win32_path path =
+  let path = String.tr ~target:'\\' ~replacement:'/' path in
+  match String.chop_prefix path ~prefix:"//?/UNC/" with
+  | Some share_path ->
+      "//" ^ share_path
+  | None ->
+      String.chop_prefix path ~prefix:"//?/" |> Option.value ~default:path
+
+
+(** the drive letter of the path, if any, and the rest of the path; the drive is always [None]
+    except on Windows *)
+let split_drive =
+  if Sys.win32 then fun path ->
+    let path = of_win32_path path in
+    if String.length path >= 2 && Char.equal path.[1] ':' && Char.is_alpha path.[0] then
+      (Some (String.prefix path 2), String.drop_prefix path 2)
+    else (None, path)
+  else fun path -> (None, path)
+
+
+(** like [Filename.parts], but also on Windows paths: [path_parts "C:\\dir\\file"] is
+    [["C:/"; "dir"; "file"]] *)
+let path_parts path =
+  let drive, path = split_drive path in
+  let parts = Filename.parts path in
+  match (drive, parts) with
+  | None, _ ->
+      parts
+  | Some drive, [] ->
+      [drive]
+  | Some drive, root :: rest ->
+      (drive ^ root) :: rest
+
+
+(** like [Filename.of_parts], but joins with '/' and answers "." on an empty list *)
+let of_path_parts parts =
+  match parts with
+  | [] ->
+      "."
+  | root :: rest when String.is_suffix root ~suffix:"/" ->
+      (* don't double the separator that a root part such as "/" or "C:/" ends with *)
+      root ^ String.concat ~sep:"/" rest
+  | _ ->
+      String.concat ~sep:"/" parts
+
+
 let normalize_path_from ~root fname =
+  let root_drive, root = split_drive root in
+  let fname_drive, fname = split_drive fname in
   let add_entry (rev_done, rev_root) entry =
     match (entry, rev_done, rev_root) with
     | ".", _, _ ->
@@ -113,27 +163,29 @@ let normalize_path_from ~root fname =
     List.rev root_without_leading_dot
   in
   let rev_result, rev_root = Filename.parts fname |> List.fold ~init:([], rev_root) ~f:add_entry in
-  (* don't use [Filename.of_parts] because it doesn't like empty lists and produces relative paths
-     "./like/this" instead of "like/this" *)
-  let filename_of_rev_parts = function
-    | [] ->
-        "."
-    | _ :: _ as rev_parts ->
-        let parts = List.rev rev_parts in
-        if String.equal (List.hd_exn parts) "/" then
-          "/" ^ String.concat ~sep:Filename.dir_sep (List.tl_exn parts)
-        else String.concat ~sep:Filename.dir_sep parts
+  let filename_of_rev_parts drive rev_parts =
+    let path = of_path_parts (List.rev rev_parts) in
+    match drive with None -> path | Some drive -> drive ^ path
   in
-  (filename_of_rev_parts rev_result, filename_of_rev_parts rev_root)
+  (filename_of_rev_parts fname_drive rev_result, filename_of_rev_parts root_drive rev_root)
 
 
 let normalize_path fname = fname |> normalize_path_from ~root:"." |> fst
 
 let flatten_path ?(sep = "-") path =
   let normalized_path = normalize_path path in
-  let path_parts = Filename.parts normalized_path in
-  let process_part = function ".." -> ["dd"] | "." -> [] | other -> [other] in
-  List.bind path_parts ~f:process_part |> String.concat ~sep
+  let process_part = function
+    | ".." ->
+        ["dd"]
+    | "." ->
+        []
+    | drive_root when Sys.win32 && String.is_suffix drive_root ~suffix:":/" ->
+        (* keep the drive letter of "C:/" but not the ':', which a file name cannot contain *)
+        [String.prefix drive_root 1]
+    | other ->
+        [other]
+  in
+  List.bind (path_parts normalized_path) ~f:process_part |> String.concat ~sep
 
 
 (** Convert a filename to an absolute one if it is relative, and normalize "." and ".." *)
@@ -150,15 +202,15 @@ let filename_to_relative ?(force_full_backtrack = false) ?(backtrack = 0) ~root 
         relativize_if_under xs ys
     | _ :: _, _ when force_full_backtrack || backtrack >= List.length origin ->
         let parent_dir = List.init (List.length origin) ~f:(fun _ -> Filename.parent_dir_name) in
-        Some (Filename.of_parts (parent_dir @ target))
+        Some (of_path_parts (parent_dir @ target))
     | [], [] ->
         Some "."
     | [], ys ->
-        Some (Filename.of_parts ys)
+        Some (of_path_parts ys)
     | _ ->
         None
   in
-  relativize_if_under (Filename.parts root) (Filename.parts fname)
+  relativize_if_under (path_parts root) (path_parts fname)
 
 
 let directory_fold f init path =
@@ -298,7 +350,9 @@ let out_channel_create_with_dir fname =
 
 
 let realpath ?(warn_on_error = true) path =
-  try Unix.realpath path
+  try
+    let real_path = Unix.realpath path in
+    if Sys.win32 then of_win32_path real_path else real_path
   with Unix.Unix_error (code, _, arg) as exn ->
     IExn.reraise_after exn ~f:(fun () ->
         if warn_on_error then
