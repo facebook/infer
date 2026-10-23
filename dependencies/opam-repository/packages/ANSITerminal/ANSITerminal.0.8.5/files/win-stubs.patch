@@ -1,0 +1,33 @@
+--- a/src/ANSITerminal_win_stubs.c
++++ b/src/ANSITerminal_win_stubs.c
+@@ -21,6 +21,7 @@
+    LICENSE for more details.
+ */
+ 
++#include <io.h>
+ #include <stdio.h>
+ #include <string.h>
+ #define CAML_INTERNALS
+@@ -29,10 +30,11 @@
+ #include <caml/alloc.h>
+ #include <caml/memory.h>
+ #include <caml/callback.h>
++#include <caml/fail.h>
+ #include <windows.h>
+ 
+-/* From otherlibs/win32unix/channels.c */
+-extern long _get_osfhandle(int);
++/* From otherlibs/win32unix/channels.c, with the declaration of _get_osfhandle() from <io.h>: it
++   returns an intptr_t, which a long would truncate on 64-bit Windows. */
+ #define HANDLE_OF_CHAN(vchan) ((HANDLE) _get_osfhandle(Channel(vchan)->fd))
+ 
+ static HANDLE hStdout;
+@@ -223,7 +225,7 @@
+ {
+   CAMLparam1(vchan);
+   HANDLE h = HANDLE_OF_CHAN(vchan);
+-  int NumberOfCharsWritten;
++  DWORD NumberOfCharsWritten;
+   COORD dwWriteCoord;
+ 
+   SET_CSBI("ANSITerminal.erase");
