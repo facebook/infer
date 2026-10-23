@@ -386,10 +386,19 @@ let rec child_loop ~slot send_to_parent send_final receive_from_parent ~f ~epilo
     - once the loop ends, transmits the results of calling [epilogue] to the parent
     - receives orders from [orders_ic], send status updates through [updates_oc]
 
+    [pid] is the pid the orchestrator knows this child by, when that is not the child's own pid.
+
     Children never return. Instead they exit when done. *)
-let child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
+let child slot ~pid ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic =
   WorkerPoolState.set_in_child (Some slot) ;
-  WorkerPoolState.reset_pid () ;
+  (* the orchestrator takes locks on behalf of this child under the pid it knows it by, and
+     {!ProcLocker} tells the locks the child owns from the others by comparing pids, so the child
+     has to answer with the same pid as the orchestrator rather than with its own *)
+  ( match pid with
+  | None ->
+      WorkerPoolState.reset_pid ()
+  | Some pid ->
+      WorkerPoolState.set_pid pid ) ;
   child_prologue () ;
   let send_to_parent (message : 'b worker_message) = marshal_to_pipe updates_oc message in
   let send_final (final_message : 'a final_worker_message) =
@@ -447,7 +456,8 @@ let fork_child ~child_prologue ~slot (updates_r, updates_w) ~f ~epilogue =
       Unix.close to_child_w ;
       let orders_ic = Unix.in_channel_of_descr to_child_r in
       let updates_oc = Unix.out_channel_of_descr updates_w in
-      child slot ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic
+      (* a forked child has the pid the parent gets from [fork] *)
+      child slot ~pid:None ~f ~child_prologue ~epilogue ~updates_oc ~orders_ic
   | `In_the_parent pid ->
       Unix.close to_child_r ;
       Unix.close updates_w ;
@@ -478,6 +488,7 @@ let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
            [INFER_ARGS] *)
         UnixLabels.create_process ~prog ~args:[|prog|] ~stdin:to_child_r ~stdout:updates_w
           ~stderr:Unix.stderr )
+    |> Pid.of_int
   in
   let down_pipe = Unix.out_channel_of_descr to_child_w in
   Stdlib.set_binary_mode_out down_pipe true ;
@@ -486,11 +497,13 @@ let spawn_child ~child_prologue ~slot (_updates_r, updates_w) ~f ~epilogue =
      warnings in the comments above ("LIMITATION") do not apply, because the child will
      not use [really_read] to access the contents of the pipe. *)
   let child_thunk ~updates_oc ~orders_ic =
-    child slot ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
+    (* tell the child which pid we know it by: [create_process] answers a process handle rather
+       than a process id on Windows, so it cannot find that out on its own *)
+    child slot ~pid:(Some pid) ~child_prologue ~f ~updates_oc ~orders_ic ~epilogue
   in
   Marshal.to_channel down_pipe (child_thunk : child_data) [Closures] ;
   Unix.close to_child_r ;
-  {pid= Pid.of_int pid; down_pipe}
+  {pid; down_pipe}
 
 
 let run_as_child () =
