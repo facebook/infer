@@ -572,7 +572,7 @@ ifeq ($(BUILD_SWIFT_ANALYZERS), yes)
 	fi; \
 	llvm_version=$$(llvm-config --version | cut -f1 -d.)-static-infer; \
 	$(call silent_on_success,Installing our LLVM OCaml bindings,\
-	opam update local-llvm && \
+	opam update infer-local && \
 	opam install --yes --no-depext llvm.$$llvm_version)
 endif
 
