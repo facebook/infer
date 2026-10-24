@@ -31,7 +31,7 @@ ocamlformat.opam.locked:
 # depends on the local opam repo
 .PHONY: llvm.opam.locked
 llvm.opam.locked:
-	$(OPAM) update local-llvm
+	$(OPAM) update infer-local
 	$(OPAM) lock llvm
 #	make paths to local patches relative
 #	sed is not perfect here, let's hope the path doesn't contain regexp-significant characters
