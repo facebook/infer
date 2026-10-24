@@ -1,0 +1,546 @@
+diff -ruN a/META b/META
+--- a/META	2026-10-24 11:51:36.580727000 +0200
++++ b/META	2026-10-24 11:51:36.758179500 +0200
+@@ -1,5 +1,5 @@
+ description = "py.ml: OCaml bindings for Python"
+-requires = "unix stdcompat"
++requires = "unix"
+ version = "20200220"
+ archive(byte) = "pyml.cma numpy.cma"
+ archive(native) = "pyml.cmxa numpy.cmxa"
+diff -ruN a/Makefile b/Makefile
+--- a/Makefile	2026-10-24 11:51:36.573103300 +0200
++++ b/Makefile	2026-10-24 11:51:36.806098100 +0200
+@@ -35,7 +35,6 @@
+ 	OCAMLMKTOP := $(OCAMLFIND) ocamlmktop
+ 	OCAMLDEP := $(OCAMLFIND) ocamldep
+ 	OCAMLDOC := $(OCAMLFIND) ocamldoc
+-	STDCOMPAT := $(shell $(OCAMLFIND) query stdcompat)
+ else
+ 	OCAMLC := $(shell \
+ 		if ocamlc.opt -version >/dev/null 2>&1; then \
+@@ -60,14 +59,13 @@
+ 	OCAMLMKTOP := ocamlmktop
+ 	OCAMLDEP := ocamldep
+ 	OCAMLDOC := ocamldoc
+-	STDCOMPAT := .
+ endif
+ 
+ OCAMLVERSION := $(shell $(OCAMLC) -version)
+ OCAMLVERSION_LIST := $(subst ., ,$(OCAMLVERSION))
+ OCAMLVERSION_MAJOR := $(word 1,$(OCAMLVERSION_LIST))
+ 
+-LIBRARIES := unix stdcompat
++LIBRARIES := unix
+ 
+ ifeq ($(OCAMLVERSION_MAJOR),5)
+ 	LIBRARIES_NUMPY = $(LIBRARIES)
+@@ -81,7 +79,6 @@
+ comma := ,
+ 
+ ifneq ($(HAVE_OCAMLFIND),no)
+-        OCAMLCFLAGS += -package stdcompat
+         OCAMLLDFLAGS += -linkpkg
+ 	PACKAGES := $(subst $(space),$(comma),$(LIBRARIES))
+ 	PACKAGES_NUMPY := $(subst $(space),$(comma),$(LIBRARIES_NUMPY))
+@@ -90,18 +87,12 @@
+ 	OCAMLNATIVELIBS := -package $(PACKAGES)
+ 	OCAMLNATIVELIBSNUMPY := -package $(PACKAGES_NUMPY)
+ else
+-        OCAMLCFLAGS += -I $(STDCOMPAT)
+-        OCAMLLDFLAGS += -I $(STDCOMPAT)
+ 	OCAMLBYTECODELIBS := $(LIBRARIES:=.cma)
+ 	OCAMLBYTECODELIBSNUMPY := $(LIBRARIES_NUMPY:=.cma)
+ 	OCAMLNATIVELIBS := $(LIBRARIES:=.cmxa)
+ 	OCAMLNATIVELIBSNUMPY := $(LIBRARIES_NUMPY:=.cmxa)
+ endif
+ 
+-ifeq ($(wildcard $(STDCOMPAT)/stdcompat.cma),)
+-$(error stdcompat module not found: please specify the path with STDCOMPAT=...)
+-endif
+-
+ OCAMLVERSION := $(shell $(OCAMLC) -version)
+ endif
+ 
+@@ -194,7 +185,6 @@
+ 	@echo make OCAMLLDFLAGS=... : set flags to OCaml compiler for linking
+ 	@echo make OCAMLLIBFLAGS=... :
+ 	@echo "  set flags to OCaml compiler for building the library"
+-	@echo make STDCOMPAT=... : set path to the stdcompat library
+ 
+ .PHONY : all.bytecode
+ all.bytecode : pyml.cma numpy.cma
+@@ -372,7 +362,7 @@
+ #	ocamlmktop raises "Warning 31". See https://github.com/diml/utop/issues/212
+ #	$(OCAMLMKTOP) -o $@ -thread -linkpkg -package utop -dontlink compiler-libs $^
+ 	ocamlfind ocamlc -thread -linkpkg -linkall -predicates create_toploop \
+-		-package compiler-libs.toplevel,utop,stdcompat $^ -o $@
++		-package compiler-libs.toplevel,utop $^ -o $@
+ 
+ pyops.ml: pyops.ml.new
+ 	cp $< $@
+diff -ruN a/dune b/dune
+--- a/dune	2026-10-24 11:51:36.598288200 +0200
++++ b/dune	2026-10-24 11:51:36.864945800 +0200
+@@ -3,12 +3,11 @@
+   (modules numpy py pyops pycaml pyml_arch pytypes pywrappers pyutils)
+   (foreign_stubs (language c) (names numpy_stubs pyml_stubs))
+   (wrapped false)
+-  (libraries unix bigarray stdcompat))
++  (libraries unix bigarray))
+ 
+ (executables
+   (names generate)
+-  (modules generate)
+-  (libraries stdcompat))
++  (modules generate))
+ 
+ (rule
+   (targets pywrappers.ml pyml.h pyml_dlsyms.inc pyml_wrappers.inc)
+@@ -30,17 +29,17 @@
+ (library
+   (name pyml_tests_common)
+   (modules pyml_tests_common)
+-  (libraries pyml stdcompat))
++  (libraries pyml))
+ 
+ (test
+   (name numpy_tests)
+   (modules numpy_tests)
+-  (libraries pyml pyml_tests_common stdcompat))
++  (libraries pyml pyml_tests_common))
+ 
+ (test
+   (name pyml_tests)
+   (modules pyml_tests)
+-  (libraries pyml pyml_tests_common stdcompat))
++  (libraries pyml pyml_tests_common))
+ 
+ (rule
+   (enabled_if (>= %{ocaml_version} 4.06))
+diff -ruN a/dune-project b/dune-project
+--- a/dune-project	2026-10-24 11:51:36.593245500 +0200
++++ b/dune-project	2026-10-24 11:51:37.403818900 +0200
+@@ -26,6 +26,5 @@
+  (depends
+   (ocaml (>= 3.12.1))
+   (ocamlfind :build)
+-  (stdcompat (>= 18))
+   (conf-python-3-dev :with-test))
+  (depopts utop))
+diff -ruN a/generate.ml b/generate.ml
+--- a/generate.ml	2026-10-24 11:51:36.578933200 +0200
++++ b/generate.ml	2026-10-24 11:51:36.921390900 +0200
+@@ -1,5 +1,3 @@
+-open Stdcompat
+-
+ type ty =
+     PyObject of bool
+   | PyCompilerFlags | String | WideString | Int | Int64 | Long | Size | IntPtr
+diff -ruN a/numpy_tests.ml b/numpy_tests.ml
+--- a/numpy_tests.ml	2026-10-24 11:51:36.544890000 +0200
++++ b/numpy_tests.ml	2026-10-24 11:51:36.965267900 +0200
+@@ -32,7 +32,7 @@
+         Pyml_tests_common.Disabled "numpy is not available"
+       else
+         begin
+-          let array = [| [| 1.; 2.; 3. |]; [| -1.23; Stdcompat.Float.nan; 2.72 |] |] in
++          let array = [| [| 1.; 2.; 3. |]; [| -1.23; Float.nan; 2.72 |] |] in
+           let array2 =
+             Bigarray.Array2.of_array (Bigarray.float64) (Bigarray.c_layout) array in
+           let bigarray = Bigarray.genarray_of_array2 array2 in
+@@ -84,7 +84,7 @@
+         end)
+ 
+ let assert_almost_eq ?(eps = 1e-7) f1 f2 =
+-  if Stdcompat.Float.abs (f1 -. f2) > eps then
++  if Float.abs (f1 -. f2) > eps then
+     failwith (Printf.sprintf "%f <> %f" f1 f2)
+ 
+ let () =
+@@ -104,7 +104,7 @@
+               assert_almost_eq (Bigarray.Array2.get array2 i j) v in
+             let assert_is_nan i j =
+               let v = Bigarray.Array2.get array2 i j in
+-              assert (Stdcompat.Float.is_nan v) in
++              assert (Float.is_nan v) in
+             assert_almost_eq 0 0 0.12;
+             assert_almost_eq 0 1 1.23;
+             assert_almost_eq 0 2 2.34;
+@@ -166,7 +166,7 @@
+               assert (Numpy.compare_kind kind Bigarray.nativeint = 0);
+               assert (Numpy.compare_layout layout Bigarray.c_layout = 0);
+               let bigarray =
+-                Stdcompat.Option.get (Numpy.check_kind_and_layout
++                Option.get (Numpy.check_kind_and_layout
+                   Bigarray.nativeint Bigarray.c_layout array) in
+               assert (Bigarray.Genarray.dims bigarray = [| 4 |]);
+               let array1 = Bigarray.array1_of_genarray bigarray in
+diff -ruN a/py.ml b/py.ml
+--- a/py.ml	2026-10-24 11:51:36.584463400 +0200
++++ b/py.ml	2026-10-24 11:51:37.027826800 +0200
+@@ -1,8 +1,6 @@
+ module Stdlib_printexc = Printexc
+ (* Workaround for opaque Printexc bug in Stdcompat 9 *)
+ 
+-open Stdcompat
+-
+ type pyobject = Pytypes.pyobject
+ 
+ type input = Pytypes.input = Single | File | Eval
+@@ -229,7 +227,7 @@
+   let lines = ldd python_full_path in
+   let is_libpython line =
+     let basename = Filename.basename line in
+-    Stdcompat.String.starts_with ~prefix:"libpython" basename in
++    String.starts_with ~prefix:"libpython" basename in
+   List.find_opt is_libpython lines
+ 
+ let libpython_from_ldconfig major minor =
+@@ -242,7 +240,7 @@
+         Printf.sprintf "libpython%d.%d" major' minor' in
+   let is_libpython line =
+     let basename = Filename.basename line in
+-    Stdcompat.String.starts_with ~prefix:prefix basename in
++    String.starts_with ~prefix:prefix basename in
+   List.find_opt is_libpython lines
+ 
+ let parse_python_list list =
+@@ -655,7 +653,7 @@
+ let keep_sigint f =
+   let previous_signal_behavior = Sys.signal Sys.sigint Sys.Signal_ignore in
+   Sys.set_signal Sys.sigint previous_signal_behavior;
+-  Stdcompat.Fun.protect f
++  Fun.protect f
+     ~finally:(fun () -> Sys.set_signal Sys.sigint previous_signal_behavior)
+ 
+ let initialize ?library_name ?interpreter ?version
+@@ -1145,7 +1143,7 @@
+     option (Pywrappers.pymapping_getitemstring mapping key)
+ 
+   let find_string mapping key =
+-    Stdcompat.Option.get (get_item_string mapping key)
++    Option.get (get_item_string mapping key)
+ 
+   let find_string_opt = get_item_string
+ 
+@@ -1528,25 +1526,25 @@
+     assert_not_null "get_attr_string" obj;
+     option (Pywrappers.pyobject_getattrstring obj attr)
+ 
+-  let find_attr obj attr = Stdcompat.Option.get (get_attr obj attr)
++  let find_attr obj attr = Option.get (get_attr obj attr)
+ 
+   let find_attr_opt = get_attr
+ 
+   let find_attr_string obj attr =
+-    Stdcompat.Option.get (get_attr_string obj attr)
++    Option.get (get_attr_string obj attr)
+ 
+   let find_attr_string_opt = get_attr_string
+ 
+   let get_item obj key =
+     option (Pywrappers.pyobject_getitem obj key)
+ 
+-  let find obj attr = Stdcompat.Option.get (get_item obj attr)
++  let find obj attr = Option.get (get_item obj attr)
+ 
+   let find_opt = get_item
+ 
+   let get_item_string obj key = get_item obj (String.of_string key)
+ 
+-  let find_string obj attr = Stdcompat.Option.get (get_item_string obj attr)
++  let find_string obj attr = Option.get (get_item_string obj attr)
+ 
+   let find_string_opt = get_item_string
+ 
+@@ -2171,7 +2169,7 @@
+     assert_not_null "get_item(_, !)" key;
+     option (Pywrappers.pydict_getitem dict key)
+ 
+-  let find dict key = Stdcompat.Option.get (get_item dict key)
++  let find dict key = Option.get (get_item dict key)
+ 
+   let find_opt = get_item
+ 
+@@ -2179,7 +2177,7 @@
+     assert_not_null "get_item_string" dict;
+     option (Pywrappers.pydict_getitemstring dict name)
+ 
+-  let find_string dict key = Stdcompat.Option.get (get_item_string dict key)
++  let find_string dict key = Option.get (get_item_string dict key)
+ 
+   let find_string_opt = get_item_string
+ 
+@@ -2967,7 +2965,7 @@
+     | `Eval -> Eval
+     | `Single -> Single in
+   let optimize =
+-    Stdcompat.Option.map (function
++    Option.map (function
+         | `Default -> Default
+         | `Debug -> Debug
+         | `Normal -> Normal
+diff -ruN a/py.mli b/py.mli
+--- a/py.mli	2026-10-24 11:51:36.566535800 +0200
++++ b/py.mli	2026-10-24 11:51:37.076796100 +0200
+@@ -723,16 +723,16 @@
+   (** [to_bindings_string o] returns all the pairs [(key, value)] in the Python
+       dictionary [o]. *)
+ 
+-  val to_bindings_seq: Object.t -> (Object.t * Object.t) Stdcompat.Seq.t
++  val to_bindings_seq: Object.t -> (Object.t * Object.t) Seq.t
+   (** [to_bindings_seq o] returns the ephemeral sequence of all the pairs
+       (key, value) in the Python dictionary [o]. *)
+ 
+   val to_bindings_seq_map: (Object.t -> 'a) -> (Object.t -> 'b) -> Object.t ->
+-    ('a * 'b) Stdcompat.Seq.t
++    ('a * 'b) Seq.t
+   (** [to_bindings_seq_map fkey fvalue o] returns the ephemeral sequence of all
+       the pairs (fkey key, fvalue value) in the Python dictionary [o]. *)
+ 
+-  val to_bindings_string_seq: Object.t -> (string * Object.t) Stdcompat.Seq.t
++  val to_bindings_string_seq: Object.t -> (string * Object.t) Seq.t
+   (** [to_bindings_string_seq o] returns the ephemeral sequence of all the pairs
+       (key, value) in the Python dictionary [o]. *)
+ 
+@@ -1084,35 +1084,35 @@
+       tail-recursive and [f] is applied to the elements of [s] in the reverse
+       order. *)
+ 
+-  val of_seq: Object.t Stdcompat.Seq.t -> Object.t
++  val of_seq: Object.t Seq.t -> Object.t
+   (** [of_seq s] returns an interator that iterates over the values of the
+       sequence [s]. *)
+ 
+-  val of_seq_map: ('a -> Object.t) -> 'a Stdcompat.Seq.t -> Object.t
++  val of_seq_map: ('a -> Object.t) -> 'a Seq.t -> Object.t
+   (** [of_seq_map f s] returns an interator that iterates over the results of
+       [f] applied to the values of the sequence [s].
+       [Py.Iter.of_seq_map f s] is equivalent to
+       [Py.Iter.of_seq (Seq.map f s)]. *)
+ 
+-  val to_seq: Object.t -> Object.t Stdcompat.Seq.t
++  val to_seq: Object.t -> Object.t Seq.t
+   (** [to_seq i] returns the sequence of the values from the iteration [i].
+       The Python iteration is consumed while the sequence is browsed.
+       Values are memoized, so that the sequence can be browsed many times. *)
+ 
+-  val to_seq_map: (Object.t -> 'a) -> Object.t -> 'a Stdcompat.Seq.t
++  val to_seq_map: (Object.t -> 'a) -> Object.t -> 'a Seq.t
+   (** [to_seq_map f i] returns the sequence of the results of [f] applied to the
+       values from the iteration [i].
+       The Python iteration is consumed while the sequence is browsed.
+       Values are memoized, so that the sequence can be browsed many times. *)
+ 
+-  val unsafe_to_seq: Object.t -> Object.t Stdcompat.Seq.t
++  val unsafe_to_seq: Object.t -> Object.t Seq.t
+   (** [unsafe_to_seq i] returns the sequence of the values from the iteration
+       [i].
+       The Python iteration is consumed while the sequence is browsed.
+       Warning: values are not memoized, so that the sequence can be browsed
+       only once. *)
+ 
+-  val unsafe_to_seq_map: (Object.t -> 'a) -> Object.t -> 'a Stdcompat.Seq.t
++  val unsafe_to_seq_map: (Object.t -> 'a) -> Object.t -> 'a Seq.t
+   (** [unsafe_to_seq_map f i] returns the sequence of the results of [f] applied
+       to the values from the iteration [i].
+       The Python iteration is consumed while the sequence is browsed.
+@@ -1239,13 +1239,13 @@
+   val of_sequence: Object.t -> Object.t
+   (** Equivalent to {!Sequence.list}. *)
+ 
+-  val of_seq: Object.t Stdcompat.Seq.t -> Object.t
++  val of_seq: Object.t Seq.t -> Object.t
+   (** [of_seq s] returns the Python list with the same elements as [s]. *)
+ 
+-  val to_seq: Object.t -> Object.t Stdcompat.Seq.t
++  val to_seq: Object.t -> Object.t Seq.t
+   (** Equivalent to {!Sequence.to_seq}. *)
+ 
+-  val to_seqi: Object.t -> (int * Object.t) Stdcompat.Seq.t
++  val to_seqi: Object.t -> (int * Object.t) Seq.t
+   (** Equivalent to {!Sequence.to_seqi}. *)
+ 
+   val singleton: Object.t -> Object.t
+@@ -1746,11 +1746,11 @@
+       tail-recursive and [f] is applied to the elements of [s] in the reverse
+       order. *)
+ 
+-  val to_seq: Object.t -> Object.t Stdcompat.Seq.t
++  val to_seq: Object.t -> Object.t Seq.t
+   (** [to_seq s] returns the OCaml sequence of the values from the Python
+       sequence [s]. *)
+ 
+-  val to_seqi: Object.t -> (int * Object.t) Stdcompat.Seq.t
++  val to_seqi: Object.t -> (int * Object.t) Seq.t
+   (** [to_seqi s] returns the OCaml indexed sequence of the values from the
+       Python sequence [s]. *)
+ 
+@@ -1837,7 +1837,7 @@
+   (** [of_string s] returns the Python string with the value [s].
+       [s] should be a valid UTF-8 string. *)
+ 
+-  val of_bytes: Stdcompat.bytes -> Object.t
++  val of_bytes: bytes -> Object.t
+   (** Same as [of_string] but with an argument of type [bytes]. *)
+ 
+   val to_string: Object.t -> string
+@@ -1845,7 +1845,7 @@
+       A failure ([Failure _]) is raised if [o] is neither a
+       [String]/[Bytes] value nor a [Unicode] value. *)
+ 
+-  val to_bytes: Object.t -> Stdcompat.bytes
++  val to_bytes: Object.t -> bytes
+   (** Same as [to_string] but with an a result of type [bytes]. *)
+ 
+   val of_unicode: ?size:int -> int array -> Object.t
+@@ -1864,13 +1864,13 @@
+   (** [of_string s] returns the Python byte sequence with the contents of
+       [s]. *)
+ 
+-  val of_bytes: Stdcompat.bytes -> Object.t
++  val of_bytes: bytes -> Object.t
+   (** Same as [of_string] but with an argument of type [bytes]. *)
+ 
+   val to_string: Object.t -> string
+   (** [to_string o] returns the string contained in the Python value [o]. *)
+ 
+-  val to_bytes: Object.t -> Stdcompat.bytes
++  val to_bytes: Object.t -> bytes
+   (** Same as [to_string] but with an a result of type [bytes]. *)
+ 
+   val length: Object.t -> int
+@@ -1947,13 +1947,13 @@
+   val to_list_map: (Object.t -> 'a) -> Object.t -> 'a list
+   (** Equivalent to {!Sequence.to_list_map}. *)
+ 
+-  val of_seq: Object.t Stdcompat.Seq.t -> Object.t
++  val of_seq: Object.t Seq.t -> Object.t
+   (** [of_seq s] returns the Python tuple with the values of the sequence s. *)
+ 
+-  val to_seq: Object.t -> Object.t Stdcompat.Seq.t
++  val to_seq: Object.t -> Object.t Seq.t
+   (** Equivalent to {!Sequence.to_seq}. *)
+ 
+-  val to_seqi: Object.t -> (int * Object.t) Stdcompat.Seq.t
++  val to_seqi: Object.t -> (int * Object.t) Seq.t
+   (** Equivalent to {!Sequence.to_seqi}. *)
+ 
+   val fold_left: ('a -> Object.t -> 'a) -> 'a -> Object.t -> 'a
+@@ -2156,7 +2156,7 @@
+   val pyarray_type: unit -> Object.t
+   (** Returns the type of Numpy arrays. *)
+ 
+-  val numpy: Stdcompat.floatarray -> Object.t
++  val numpy: floatarray -> Object.t
+   (** [numpy a] returns a Numpy array that shares the same contents than
+       the OCaml array [a].
+       The array is passed in place (without copy) which relies on the
+@@ -2166,7 +2166,7 @@
+       Note that the {!Numpy} module provides a more general interface
+       between Numpy arrays and OCaml bigarrays. *)
+ 
+-  val numpy_get_array: Object.t -> Stdcompat.floatarray
++  val numpy_get_array: Object.t -> floatarray
+   (** [numpy_get_array a] returns the OCaml array from which the Numpy
+       array [a] has been converted from. Note that this function fails
+       if [a] has not been obtained by calling the {!numpy} function
+diff -ruN a/pycaml.ml b/pycaml.ml
+--- a/pycaml.ml	2026-10-24 11:51:36.568368300 +0200
++++ b/pycaml.ml	2026-10-24 11:51:37.136930700 +0200
+@@ -466,7 +466,7 @@
+ 
+ let py_profiling_active = ref false
+ 
+-let py_profile_hash = Stdcompat.Lazy.from_fun (fun () -> Hashtbl.create 100)
++let py_profile_hash = Lazy.from_fun (fun () -> Hashtbl.create 100)
+ 
+ let py_activate_profiling () =
+   let old_value = !py_profiling_active in
+diff -ruN a/pyml_stubs.c b/pyml_stubs.c
+--- a/pyml_stubs.c	2026-10-24 11:51:36.543137200 +0200
++++ b/pyml_stubs.c	2026-10-24 11:51:37.296376400 +0200
+@@ -11,7 +11,6 @@
+ #include <stdio.h>
+ #include <stdlib.h>
+ #include <errno.h>
+-#include <stdcompat.h>
+ #include <assert.h>
+ #include "pyml_stubs.h"
+ 
+diff -ruN a/pyml_tests.ml b/pyml_tests.ml
+--- a/pyml_tests.ml	2026-10-24 11:51:36.596772900 +0200
++++ b/pyml_tests.ml	2026-10-24 11:51:37.184476700 +0200
+@@ -536,9 +536,9 @@
+         Pyml_tests_common.Disabled "numpy is not available"
+       else
+         begin
+-          let array = Stdcompat.Array.Floatarray.create 2 in
+-          Stdcompat.Array.Floatarray.set array 0 1.;
+-          Stdcompat.Array.Floatarray.set array 1 2.;
++          let array = Array.Floatarray.create 2 in
++          Array.Floatarray.set array 0 1.;
++          Array.Floatarray.set array 1 2.;
+           let a = Py.Array.numpy array in
+           let m = Py.Import.add_module "test" in
+           Py.Module.set m "array" a;
+@@ -550,8 +550,8 @@
+ array[0] = 42.
+ array[1] = 43.
+ ");
+-          assert (Stdcompat.Array.Floatarray.get array 0 = 42.);
+-          assert (Stdcompat.Array.Floatarray.get array 1 = 43.);
++          assert (Array.Floatarray.get array 0 = 42.);
++          assert (Array.Floatarray.get array 1 = 43.);
+           Pyml_tests_common.Passed
+         end)
+ 
+@@ -562,7 +562,7 @@
+         Pyml_tests_common.Disabled "numpy is not available"
+       else
+         begin
+-          let array = Stdcompat.Float.Array.init 0x10000 float_of_int in
++          let array = Float.Array.init 0x10000 float_of_int in
+           let numpy_array = Py.Array.numpy array in
+           let add =
+             Py.Module.get_function (Py.Import.import_module "numpy") "add" in
+@@ -571,16 +571,16 @@
+               numpy_array
+             else
+               let array =
+-                Stdcompat.Float.Array.map_from_array Stdcompat.Fun.id
++                Float.Array.map_from_array Fun.id
+                   (Py.Sequence.to_array_map Py.Float.to_float
+                      (add [| numpy_array; numpy_array |])) in
+               crunch (Py.Array.numpy array) (pred n) in
+           ignore (crunch (Py.Array.numpy array) 0x100);
+-          assert (Stdcompat.Float.Array.length array = 0x10000);
++          assert (Float.Array.length array = 0x10000);
+           for i = 0 to 0x10000 - 1 do
+-            assert (Stdcompat.Float.Array.get array i = float_of_int i)
++            assert (Float.Array.get array i = float_of_int i)
+           done;
+-          Stdcompat.Float.Array.set array 1 42.;
++          Float.Array.set array 1 42.;
+           assert (Py.Float.to_float (Py.Sequence.get numpy_array 1) = 42.);
+           Pyml_tests_common.Passed
+         end)
+diff -ruN a/pyutils.ml b/pyutils.ml
+--- a/pyutils.ml	2026-10-24 11:51:36.570185200 +0200
++++ b/pyutils.ml	2026-10-24 11:51:37.233953600 +0200
+@@ -1,5 +1,3 @@
+-open Stdcompat
+-
+ let option_find f x =
+   try Some (f x)
+   with Not_found -> None
+@@ -57,7 +55,7 @@
+   let (file, channel) = Filename.open_temp_file "pyml_tests" ".py" in
+   Fun.protect begin fun () ->
+     write_and_close channel (output_string channel) contents;
+-    Stdcompat.In_channel.with_open_bin file (f file)
++    In_channel.with_open_bin file (f file)
+   end
+   ~finally:(fun () -> Sys.remove file)
+ 
