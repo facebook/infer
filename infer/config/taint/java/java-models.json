@@ -276,7 +276,7 @@
     { "class_names": ["javax.servlet.http.HttpServlet", "jakarta.servlet.http.HttpServlet"],
       "method_names": ["doDelete", "doGet", "doHead", "doOptions", "doPatch", "doPost", "doPut", "doQuery", "doTrace", "service"],
       "kinds": ["Endpoint"],
-      "taint_target": ["ArgumentsMatchingTypes", ["javax.servlet.ServletRequest", "jakarta.servlet.ServletRequest"]] },
+      "taint_target": ["ArgumentPositions", [0]] },
     { "overrides_of_class_with_annotation": "javax.ejb.Remote",
       "kinds": ["Endpoint"],
       "taint_target": "AllArguments" },
