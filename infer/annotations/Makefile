@@ -12,6 +12,7 @@ KOTLIN_ANNOT_JAR = $(DEPENDENCIES_DIR)/java/kotlin-annotations/kotlin-annotation
 SOURCES_DIR = src/main/java
 ANNOT_SOURCES = $(shell find $(SOURCES_DIR)/com/facebook/infer/annotation -name "*.java")
 ANNOT_CLASSES = 'annot_classes'
+ANNOT_CLASSPATH = $(call classpath_of,$(JSR_JAR) $(KOTLIN_ANNOT_JAR))
 
 ANNOTATIONS_JAR = $(CWD)/annotations.jar
 SOURCES_JAR = $(CWD)/annotations-src.jar
@@ -20,11 +21,11 @@ all: $(ANNOTATIONS_JAR) $(SOURCES_JAR)
 
 $(ANNOTATIONS_JAR): $(ANNOT_SOURCES)
 	$(MKDIR_P) $(ANNOT_CLASSES)
-	$(JAVAC) -source 8 -target 8 -cp $(JSR_JAR):$(KOTLIN_ANNOT_JAR) $(ANNOT_SOURCES) -d $(ANNOT_CLASSES)
-	cd $(ANNOT_CLASSES) && jar cvf $(ANNOTATIONS_JAR) com
+	$(JAVAC) -source 8 -target 8 -cp "$(ANNOT_CLASSPATH)" $(ANNOT_SOURCES) -d $(ANNOT_CLASSES)
+	cd $(ANNOT_CLASSES) && jar cvf $(call native_path,$(ANNOTATIONS_JAR)) com
 
 $(SOURCES_JAR): $(ANNOT_SOURCES)
-	jar cvf $(SOURCES_JAR) $(SOURCES_DIR)/com
+	jar cvf $(call native_path,$(SOURCES_JAR)) $(SOURCES_DIR)/com
 
 clean:
 	$(QUIET)$(REMOVE_DIR) $(ANNOT_CLASSES)
