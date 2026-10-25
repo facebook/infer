@@ -424,6 +424,41 @@
       "method_names": ["<init>"],
       "kinds": ["Deserialization"]
     },
+    { "class_names": ["java.beans.XMLDecoder"],
+      "method_names": ["<init>"],
+      "kinds": ["Deserialization"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.apache.commons.lang.SerializationUtils", "org.apache.commons.lang3.SerializationUtils"],
+      "method_names": ["deserialize"],
+      "kinds": ["Deserialization"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.yaml.snakeyaml.Yaml"],
+      "method_names": ["load", "loadAll", "loadAs"],
+      "kinds": ["Deserialization"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["com.thoughtworks.xstream.XStream"],
+      "method_names": ["fromXML"],
+      "kinds": ["Deserialization"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["com.esotericsoftware.kryo.Kryo"],
+      "method_names": ["readClassAndObject", "readObject", "readObjectOrNull"],
+      "kinds": ["Deserialization"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["com.alibaba.fastjson.JSON"],
+      "method_names": ["parse", "parseArray", "parseObject"],
+      "kinds": ["Deserialization"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["flexjson.JSONDeserializer"],
+      "method_names": ["deserialize", "deserializeInto"],
+      "kinds": ["Deserialization"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
     { "class_names": ["java.lang.Class"],
       "method_names": ["forName"],
       "kinds": ["ClassLoading"]
