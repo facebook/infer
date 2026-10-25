@@ -201,6 +201,20 @@ module Resource = struct
     @ call_may_throw_exception (JavaClassName.from_string exn_class_name) model_data astate
 
 
+  (* [FileInputStream.getChannel] and friends return a channel that is closed together with the
+     stream, and closing the channel closes the stream. The channel is not a separate resource, but
+     closing it must release the stream, otherwise the stream looks leaked or, when the call is left
+     unknown, is not tracked at all (#2103). *)
+  let get_channel stream : model_no_non_disj =
+   fun {path; location; ret= ret_id, _} astate ->
+    let event = Hist.call_event path location "getChannel" in
+    let channel = (AbstractValue.mk_fresh (), Hist.single_event event) in
+    let<+> astate =
+      write_field path PulseOperations.ModeledField.delegated_release stream location channel astate
+    in
+    PulseOperations.write_id ret_id channel astate
+
+
   (* Common java.sql.Connection calls that do not close the connection. Left unknown, any of them
      makes Pulse stop tracking the connection (#2111). *)
   let jdbc_connection_usage_modeled =
@@ -735,6 +749,10 @@ let matchers : matcher list =
     &:: "<init>" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"java.io.IOException"
     |> with_non_disj
+  ; +map_context_tenv
+       (PatternMatch.Java.implements_one_of
+          ["java.io.FileInputStream"; "java.io.FileOutputStream"; "java.io.RandomAccessFile"] )
+    &:: "getChannel" <>$ capt_arg_payload $--> Resource.get_channel |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.ZipFile")
     &:: "<init>" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"java.io.IOException"
