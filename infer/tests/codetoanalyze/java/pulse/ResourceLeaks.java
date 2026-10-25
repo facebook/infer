@@ -943,7 +943,8 @@ public class ResourceLeaks {
 
   // FileChannel
 
-  void FN_copyFileLeakBad(File src, File dst) throws IOException {
+  // Repro for facebook/infer#2103: the stream behind a FileChannel was not tracked.
+  void copyFileLeakBad(File src, File dst) throws IOException {
     FileChannel inChannel = new FileInputStream(src).getChannel();
     FileChannel outChannel = new FileOutputStream(dst).getChannel();
     try {
@@ -961,6 +962,51 @@ public class ResourceLeaks {
     } finally {
       inChannel.close();
     }
+  }
+
+  void channelNotClosedBad(File src) throws IOException {
+    FileChannel channel = new FileInputStream(src).getChannel();
+    if (channel == null) {
+      throw new IOException();
+    }
+  }
+
+  void randomAccessFileChannelNotClosedBad(File src) throws IOException {
+    RandomAccessFile file = new RandomAccessFile(src, "r");
+    FileChannel channel = file.getChannel();
+    if (channel == null) {
+      throw new IOException();
+    }
+  }
+
+  long streamClosedAfterGetChannelOk(File src) throws IOException {
+    FileInputStream in = new FileInputStream(src);
+    try {
+      return in.getChannel().size();
+    } finally {
+      in.close();
+    }
+  }
+
+  long randomAccessFileChannelClosedOk(File src) throws IOException {
+    RandomAccessFile file = new RandomAccessFile(src, "r");
+    FileChannel channel = file.getChannel();
+    try {
+      return channel.size();
+    } finally {
+      channel.close();
+    }
+  }
+
+  void copyFileTryWithResourcesOk(File src, File dst) throws IOException {
+    try (FileChannel inChannel = new FileInputStream(src).getChannel();
+        FileChannel outChannel = new FileOutputStream(dst).getChannel()) {
+      inChannel.transferTo(0, inChannel.size(), outChannel);
+    }
+  }
+
+  FileChannel returnChannelOk(File src) throws IOException {
+    return new FileInputStream(src).getChannel();
   }
 
   protected long checkNotNullCauseNoLeakOk(URL mUrl) throws IOException {
