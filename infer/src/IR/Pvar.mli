@@ -49,6 +49,10 @@ val is_global : t -> bool
 val is_static_companion : t -> bool
 (** Check if the pvar is a global var of a static companion *)
 
+val is_static_global : t -> bool
+(** Check if the pvar is a global or function-local variable declared [static], excluding static
+    data members *)
+
 val is_static_local : t -> bool
 (** Check if the pvar is a static variable declared inside a function *)
 

@@ -109,8 +109,14 @@ let pp_with_base pp_base fmt (base, accesses) =
   pp_rev_accesses fmt (List.rev accesses)
 
 
-(* A wrapper that ignores ProgramVar.Global_var translation_unit in comparison
- * as we cannot add that ignore there due to issues with Siof
+let global_key pvar =
+  ( Pvar.get_name pvar
+  , Pvar.get_template_args pvar
+  , if Pvar.is_static_global pvar then Pvar.get_translation_unit pvar else None )
+
+
+(* A wrapper that ignores ProgramVar.Global_var translation_unit in comparison, except for static
+ * variables, as we cannot add that ignore there due to issues with Siof
  * similar hack to D51588007 *)
 module SVar = struct
   include Var
@@ -118,9 +124,8 @@ module SVar = struct
   let compare x y =
     match (x, y) with
     | ProgramVar x, ProgramVar y when Pvar.is_global x && Pvar.is_global y ->
-        [%compare: Mangled.t * Typ.template_spec_info]
-          (Pvar.get_name x, Pvar.get_template_args x)
-          (Pvar.get_name y, Pvar.get_template_args y)
+        [%compare: Mangled.t * Typ.template_spec_info * SourceFile.t option] (global_key x)
+          (global_key y)
     | ProgramVar x, _ when Pvar.is_global x ->
         -1
     | _, ProgramVar x when Pvar.is_global x ->
@@ -132,9 +137,8 @@ module SVar = struct
   let equal x y =
     match (x, y) with
     | ProgramVar x, ProgramVar y when Pvar.is_global x && Pvar.is_global y ->
-        [%equal: Mangled.t * Typ.template_spec_info]
-          (Pvar.get_name x, Pvar.get_template_args x)
-          (Pvar.get_name y, Pvar.get_template_args y)
+        [%equal: Mangled.t * Typ.template_spec_info * SourceFile.t option] (global_key x)
+          (global_key y)
     | ProgramVar x, _ when Pvar.is_global x ->
         false
     | _, ProgramVar x when Pvar.is_global x ->
@@ -165,12 +169,15 @@ type t =
   | Parameter of {index: int; path: unrooted_path}
       (** method parameter represented by its 0-indexed position, root var is not used in comparison
       *)
+  | Opaque of {path: unrooted_path}
+      (** reached from a value the caller cannot name, eg returned by a call, root var is not used
+          in comparison *)
 [@@deriving compare, equal]
 
 let get_typ tenv = function
   | Class _ ->
       Some StdTyp.Java.pointer_to_java_lang_class
-  | Global {path} | Parameter {path} ->
+  | Global {path} | Parameter {path} | Opaque {path} ->
       get_typ tenv path
 
 
@@ -204,7 +211,8 @@ let rec inner_class_normalise tenv ((typ, (accesses : access_list)) as path) =
 
 let equal_across_threads tenv t1 t2 =
   match (t1, t2) with
-  | Parameter {path= (_, typ1), accesses1}, Parameter {path= (_, typ2), accesses2} ->
+  | ( (Parameter {path= (_, typ1), accesses1} | Opaque {path= (_, typ1), accesses1})
+    , (Parameter {path= (_, typ2), accesses2} | Opaque {path= (_, typ2), accesses2}) ) ->
       (* parameter position/names can be ignored across threads, if types and accesses are equal *)
       let path1 = inner_class_normalise tenv (typ1, accesses1) in
       let path2 = inner_class_normalise tenv (typ2, accesses2) in
@@ -215,6 +223,34 @@ let equal_across_threads tenv t1 t2 =
 
 
 let is_class_object = function Class _ -> true | _ -> false
+
+let may_denote_distinct_objects = function
+  | Global {path= _, accesses} | Parameter {path= _, accesses} ->
+      List.exists accesses ~f:(function MemoryAccess.ArrayAccess _ -> true | _ -> false)
+  | Opaque _ ->
+      true
+  | Class _ ->
+      false
+
+
+let get_last_field_or_global = function
+  | Global {path= (var, _), accesses}
+  | Parameter {path= (var, _), accesses}
+  | Opaque {path= (var, _), accesses} -> (
+      let last_field =
+        List.fold accesses ~init:None ~f:(fun last (access : access) ->
+            match access with FieldAccess field -> Some field | _ -> last )
+      in
+      match (last_field, (var : Var.t)) with
+      | Some field, _ ->
+          Some (First field)
+      | None, ProgramVar pvar when Pvar.is_global pvar ->
+          Some (Second pvar)
+      | None, _ ->
+          None )
+  | Class _ ->
+      None
+
 
 let rec make formal_map (hilexp : HilExp.t) =
   let make_from_acc_exp acc_exp =
@@ -263,12 +299,15 @@ let pp fmt t =
       F.fprintf fmt "C{%s}" (Typ.Name.name typename)
   | Parameter {index; path} ->
       F.fprintf fmt "P<%i>{%a}" index pp_path path
+  | Opaque {path} ->
+      F.fprintf fmt "O{%a}" pp_path path
 
 
 let root_class = function
   | Class {typename} ->
       Some typename
-  | Global {path= (_, {desc}), _} | Parameter {path= (_, {desc}), _} -> (
+  | Global {path= (_, {desc}), _} | Parameter {path= (_, {desc}), _} | Opaque {path= (_, {desc}), _}
+    -> (
     match desc with
     | Tstruct typename | Tptr ({desc= Tstruct typename}, _) ->
         Some typename
@@ -288,7 +327,7 @@ let describe fmt t =
   match t with
   | Class {typename} ->
       MF.wrap_monospaced describe_class_object fmt typename
-  | Global {path} | Parameter {path} ->
+  | Global {path} | Parameter {path} | Opaque {path} ->
       F.fprintf fmt "%a%a" (MF.wrap_monospaced describe_path) path describe_root t
 
 
@@ -298,28 +337,44 @@ let pp_subst fmt subst =
   PrettyPrintable.pp_collection fmt ~pp_item:(Pp.option pp) (Array.to_list subst)
 
 
+(* the address of a local is not opaque: objects on the stack of the caller are not shared *)
+let rec make_opaque (hilexp : HilExp.t) =
+  match hilexp with
+  | AccessExpression access_exp -> (
+    match HilExp.AccessExpression.to_accesses access_exp with
+    | HilExp.AccessExpression.Base base, accesses
+      when not (List.mem accesses MemoryAccess.TakeAddress ~equal:equal_access) ->
+        Some (Opaque {path= (base, accesses)})
+    | _ ->
+        None )
+  | Cast (_, hilexp) ->
+      make_opaque hilexp
+  | _ ->
+      None
+
+
 let make_subst formal_map actuals =
-  let actuals = Array.of_list actuals in
-  let len =
-    (* deal with var args functions *)
-    Int.max (FormalMap.cardinal formal_map) (Array.length actuals)
-  in
-  let subst = Array.create ~len None in
-  FormalMap.iter
-    (fun _base idx ->
-      if idx < Array.length actuals then subst.(idx) <- make formal_map actuals.(idx) )
-    formal_map ;
-  subst
+  Array.of_list_map actuals ~f:(fun actual ->
+      match make formal_map actual with None -> make_opaque actual | address -> address )
+
+
+let without_opaque subst =
+  Array.map subst ~f:(function Some (Opaque _) -> None | address -> address)
 
 
 let apply_subst (subst : subst) t =
   match t with
-  | Global _ | Class _ ->
+  | Global _ | Class _ | Opaque _ ->
       Some t
-  | Parameter {index; path= _, []} -> (
+  | Parameter {index; path= (var, _), []} -> (
     try
       (* Special case for when the parameter is used without additional accesses, eg [x] as opposed to [x.f[].g]. *)
-      subst.(index)
+      match subst.(index) with
+      | Some (Opaque {path= (_, typ), accesses}) ->
+          (* print the parameter rather than the caller's temporary *)
+          Some (Opaque {path= ((var, typ), accesses)})
+      | address ->
+          address
     with Invalid_argument _ -> None )
   | Parameter {index; path} -> (
     try
@@ -338,4 +393,11 @@ let apply_subst (subst : subst) t =
             None )
       | Some (Global global) -> (
         match append ~on_to:global.path path with Some path -> Some (Global {path}) | None -> None )
+      | Some (Opaque {path= (_, typ), accesses}) -> (
+          let (var, _), _ = path in
+          match append ~on_to:((var, typ), accesses) path with
+          | Some path ->
+              Some (Opaque {path})
+          | None ->
+              None )
     with Invalid_argument _ -> None )

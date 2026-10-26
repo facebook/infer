@@ -2069,7 +2069,8 @@ and lock_model =
     ~in_help:InferCommand.[(Analyze, manual_clang)]
     {|Specify custom lock models for starvation analysis.
 Example for pthreads (already included in infer):
-[{"lock":["pthread_mutex_lock"],"unlock":["pthread_mutex_unlock"]}] |}
+[{"lock":["pthread_mutex_lock"],"unlock":["pthread_mutex_unlock"]}]
+The lock functions of a model with a "classname" are methods of that class, so C lock functions go in a model without one. "recursive" says whether locks whose type is the C++ class, C struct or C union "classname" are recursive; without it, a class keeps its built-in setting, or is recursive if it has none. A recursive mutex class that wraps a pthread mutex whose recursive initialisation is not recognised must also list its methods, eg [{"classname":"RecMutex","lock":["lock"],"unlock":["unlock"],"recursive":true}], or its locks are those of the inner pthread_mutex_t. [{"classname":"pthread_mutex_t","recursive":true}] (and "_opaque_pthread_mutex_t" on macOS) makes every pthread mutex recursive.|}
 
 
 and log_pulse_disjunct_increase_after_model_call =

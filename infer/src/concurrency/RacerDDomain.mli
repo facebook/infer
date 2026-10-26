@@ -115,6 +115,7 @@ module Attribute : sig
     | Functional  (** holds a value returned from a callee marked [@Functional] *)
     | OnMainThread  (** boolean is true if the current procedure is running on the main thread *)
     | LockHeld  (** boolean is true if a lock is currently held *)
+    | LockHeldIfZero  (** value is zero if a lock is currently held *)
     | Synchronized  (** the object is a synchronized data structure *)
 end
 
@@ -200,5 +201,7 @@ val acquire_lock : t -> t
 val release_lock : t -> t
 
 val lock_if_true : HilExp.access_expression -> t -> t
+
+val lock_if_zero : HilExp.access_expression -> t -> t
 
 val branch_never_returns : unit -> t
