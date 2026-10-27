@@ -496,6 +496,36 @@
       "kinds": ["SSRF"],
       "taint_target": ["ArgumentsMatchingTypes", ["java.net.URL"]]
     },
+    { "class_names": ["org.apache.http.client.methods.HttpDelete", "org.apache.http.client.methods.HttpGet", "org.apache.http.client.methods.HttpPatch", "org.apache.http.client.methods.HttpPost", "org.apache.http.client.methods.HttpPut"],
+      "method_names": ["<init>"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.apache.http.client.methods.HttpRequestBase"],
+      "method_names": ["setURI"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.apache.http.client.methods.RequestBuilder"],
+      "method_names": ["delete", "get", "head", "options", "patch", "post", "put", "setUri", "trace"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.apache.commons.httpclient.HttpMethodBase"],
+      "method_names": ["<init>", "setURI"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["okhttp3.Request$Builder"],
+      "method_names": ["url"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.springframework.web.client.RestTemplate"],
+      "method_names": ["delete", "exchange", "execute", "getForEntity", "getForObject", "headForHeaders", "optionsForAllow", "patchForObject", "postForEntity", "postForLocation", "postForObject", "put"],
+      "kinds": ["SSRF"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
     { "class_names": ["javax.xml.xpath.XPath"],
       "method_names": ["compile", "evaluate", "evaluateExpression"],
       "kinds": ["XPathQuery"],
