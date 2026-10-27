@@ -545,6 +545,26 @@
       "method_names": ["prepareStatement", "prepareCall"],
       "kinds": ["SQLInjection"],
       "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.springframework.jdbc.core.JdbcTemplate"],
+      "method_names": ["batchUpdate", "execute", "query", "queryForList", "queryForMap", "queryForObject", "queryForRowSet", "queryForStream", "update"],
+      "kinds": ["SQLInjection"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["org.springframework.jdbc.object.BatchSqlUpdate", "org.springframework.jdbc.object.MappingSqlQuery", "org.springframework.jdbc.object.MappingSqlQueryWithParameters", "org.springframework.jdbc.object.SqlCall", "org.springframework.jdbc.object.SqlFunction", "org.springframework.jdbc.object.SqlQuery", "org.springframework.jdbc.object.SqlUpdate", "org.springframework.jdbc.object.UpdatableSqlQuery"],
+      "method_names": ["<init>"],
+      "kinds": ["SQLInjection"],
+      "taint_target": ["ArgumentsMatchingTypes", ["java.lang.String"]]
+    },
+    { "class_names": ["org.hibernate.Session", "org.hibernate.SharedSessionContract", "org.hibernate.query.QueryProducer"],
+      "method_names": ["createMutationQuery", "createNativeMutationQuery", "createNativeQuery", "createQuery", "createSQLQuery", "createSelectionQuery"],
+      "kinds": ["SQLInjection"],
+      "taint_target": ["ArgumentPositions", [0]]
+    },
+    { "class_names": ["javax.persistence.EntityManager", "jakarta.persistence.EntityManager"],
+      "method_names": ["createNativeQuery", "createQuery"],
+      "kinds": ["SQLInjection"],
+      "taint_target": ["ArgumentPositions", [0]]
     }
   ],
   "pulse-taint-sanitizers": [
