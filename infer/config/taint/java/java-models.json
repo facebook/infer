@@ -583,6 +583,14 @@
     { "class_names": ["org.owasp.encoder.Encode"],
       "method_names": ["forHtml", "forHtmlAttribute", "forHtmlContent"],
       "kinds": ["HTMLEscaping"]
+    },
+    { "class_names": ["org.apache.commons.lang.StringEscapeUtils"],
+      "method_names": ["escapeHtml"],
+      "kinds": ["HTMLEscaping"]
+    },
+    { "class_names": ["org.owasp.esapi.Encoder"],
+      "method_names": ["encodeForHTML", "encodeForHTMLAttribute"],
+      "kinds": ["HTMLEscaping"]
     }
   ]
 }
