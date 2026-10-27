@@ -49,7 +49,9 @@ import java.util.Scanner;
 import java.util.jar.JarFile;
 import java.util.jar.JarInputStream;
 import java.util.jar.JarOutputStream;
+import java.util.zip.DataFormatException;
 import java.util.zip.Deflater;
+import java.util.zip.DeflaterOutputStream;
 import java.util.zip.GZIPInputStream;
 import java.util.zip.GZIPOutputStream;
 import java.util.zip.Inflater;
@@ -1114,7 +1116,9 @@ public class ResourceLeaks {
     f.close();
   }
 
-  public void FN_deflaterLeakBad() {
+  // Deflater and Inflater hold native memory that is only released by end().
+
+  public void deflaterLeakBad() {
     Deflater comp = new Deflater();
   }
 
@@ -1123,13 +1127,78 @@ public class ResourceLeaks {
     comp.end();
   }
 
-  public void FN_inflaterLeakBad() {
+  public void inflaterLeakBad() {
     Inflater decomp = new Inflater();
   }
 
   public void inflaterNoLeakOk() {
     Inflater decomp = new Inflater();
     decomp.end();
+  }
+
+  public byte[] compressNotEndedBad(byte[] input) {
+    Deflater comp = new Deflater(Deflater.BEST_COMPRESSION);
+    comp.setInput(input);
+    comp.finish();
+    byte[] output = new byte[input.length + 64];
+    int length = comp.deflate(output);
+    return output;
+  }
+
+  public byte[] compressEndedOk(byte[] input) {
+    Deflater comp = new Deflater(Deflater.BEST_COMPRESSION, true);
+    try {
+      comp.setInput(input);
+      comp.finish();
+      byte[] output = new byte[input.length + 64];
+      while (!comp.finished()) {
+        comp.deflate(output);
+      }
+      return output;
+    } finally {
+      comp.end();
+    }
+  }
+
+  public byte[] decompressNotEndedOnExceptionBad(byte[] input) throws DataFormatException {
+    Inflater decomp = new Inflater();
+    decomp.setInput(input);
+    byte[] output = new byte[1024];
+    decomp.inflate(output);
+    decomp.end();
+    return output;
+  }
+
+  public byte[] decompressEndedOk(byte[] input) throws DataFormatException {
+    Inflater decomp = new Inflater();
+    try {
+      decomp.setInput(input);
+      byte[] output = new byte[1024];
+      decomp.inflate(output);
+      return output;
+    } finally {
+      decomp.end();
+    }
+  }
+
+  public Deflater returnDeflaterOk() {
+    return new Deflater();
+  }
+
+  // DeflaterOutputStream.close() only ends the deflater it created itself, not one passed to it.
+  public void deflaterPassedToStreamNotEndedBad(OutputStream out) throws IOException {
+    DeflaterOutputStream stream = new DeflaterOutputStream(out, new Deflater());
+    stream.close();
+  }
+
+  public void deflaterPassedToStreamEndedOk(OutputStream out) throws IOException {
+    Deflater comp = new Deflater();
+    try {
+      DeflaterOutputStream stream = new DeflaterOutputStream(out, comp);
+      stream.close();
+    } finally {
+      comp.end();
+    }
   }
 
   void NoResourceLeakWarningAfterCheckStateOk(File f, int x) throws IOException {
