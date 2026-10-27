@@ -268,6 +268,32 @@ module Resource = struct
       ; "stream" ]
 
 
+  (* [java.util.zip.Deflater] and [java.util.zip.Inflater] hold native zlib memory until [end()]
+     (or [close()], since JDK 25) is called. The calls below do not release that memory and do not
+     throw checked exceptions. Left unknown, any of them makes Pulse stop tracking the codec.
+     [Inflater.inflate] is modeled separately because it throws [DataFormatException]. *)
+  let zip_codec_usage_modeled =
+    StringSet.of_list
+      [ "deflate"
+      ; "finish"
+      ; "finished"
+      ; "getAdler"
+      ; "getBytesRead"
+      ; "getBytesWritten"
+      ; "getRemaining"
+      ; "getTotalIn"
+      ; "getTotalOut"
+      ; "needsDictionary"
+      ; "needsInput"
+      ; "reset"
+      ; "setDictionary"
+      ; "setInput"
+      ; "setLevel"
+      ; "setStrategy" ]
+
+
+  let zip_codec_release = StringSet.of_list ["close"; "end"]
+
   let use ~exn_class_name : model_no_non_disj =
     let exn = JavaClassName.from_string exn_class_name in
     fun model_data astate ->
@@ -294,6 +320,13 @@ module Resource = struct
    fun model_data astate ->
     PulseOperations.java_resource_release ~recursive:false (fst this) astate
     |> use ~exn_class_name:"java.io.IOException" model_data
+
+
+  (* Releases the resource without an exceptional path, for [Deflater.end] and [Inflater.end], which
+     do not throw checked exceptions. *)
+  let release_no_exception this : model_no_non_disj =
+   fun _ astate ->
+    PulseOperations.java_resource_release ~recursive:false (fst this) astate |> Basic.ok_continue
 end
 
 module Collection = struct
@@ -760,6 +793,23 @@ let matchers : matcher list =
   ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.ZipFile")
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str Resource.zipfile_usage_modeled)
     <>$ any_arg $+...$--> Basic.skip |> with_non_disj
+  ; +map_context_tenv
+       (PatternMatch.Java.implements_one_of ["java.util.zip.Deflater"; "java.util.zip.Inflater"])
+    &:: "<init>" <>$ capt_arg_payload
+    $+...$--> (fun this -> Resource.allocate this)
+    |> with_non_disj
+  ; +map_context_tenv
+       (PatternMatch.Java.implements_one_of ["java.util.zip.Deflater"; "java.util.zip.Inflater"])
+    &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str Resource.zip_codec_usage_modeled)
+    <>$ any_arg $+...$--> Basic.skip |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.Inflater")
+    &:: "inflate" <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"java.util.zip.DataFormatException"
+    |> with_non_disj
+  ; +map_context_tenv
+       (PatternMatch.Java.implements_one_of ["java.util.zip.Deflater"; "java.util.zip.Inflater"])
+    &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str Resource.zip_codec_release)
+    <>$ capt_arg_payload $--> Resource.release_no_exception |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.net.Socket")
     &:: "getOutputStream" <>$ any_arg $--> Basic.skip |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.net.Socket")
