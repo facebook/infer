@@ -277,6 +277,10 @@
       "method_names": ["doDelete", "doGet", "doHead", "doOptions", "doPatch", "doPost", "doPut", "doQuery", "doTrace", "service"],
       "kinds": ["Endpoint"],
       "taint_target": ["ArgumentPositions", [0]] },
+    { "class_names": ["javax.servlet.ServletRequest", "javax.servlet.http.HttpServletRequest", "jakarta.servlet.ServletRequest", "jakarta.servlet.http.HttpServletRequest"],
+      "method_names": ["getCookies", "getHeader", "getHeaderNames", "getHeaders", "getInputStream", "getParameter", "getParameterMap", "getParameterNames", "getParameterValues", "getPathInfo", "getQueryString", "getReader", "getRequestURI", "getRequestURL"],
+      "kinds": ["Endpoint"]
+    },
     { "overrides_of_class_with_annotation": "javax.ejb.Remote",
       "kinds": ["Endpoint"],
       "taint_target": "AllArguments" },
@@ -641,6 +645,12 @@
     { "class_names": ["org.owasp.esapi.Encoder"],
       "method_names": ["encodeForHTML", "encodeForHTMLAttribute"],
       "kinds": ["HTMLEscaping"]
+    }
+  ],
+  "pulse-taint-propagators": [
+    { "class_names": ["javax.servlet.http.Cookie", "jakarta.servlet.http.Cookie"],
+      "method_names": ["setComment", "setDomain", "setHttpOnly", "setMaxAge", "setPath", "setSecure", "setVersion"],
+      "taint_target": "ReturnValue"
     }
   ]
 }
