@@ -233,6 +233,46 @@ module Resource = struct
       ; "setTransactionIsolation" ]
 
 
+  (* [java.io.RandomAccessFile] reads, writes and seeks. None of them closes the file, and all of
+     them may throw [IOException]. Left unknown, any of them makes Pulse stop tracking the file, so
+     a file that is not closed when one of these calls throws, or that is never closed, is not
+     reported. *)
+  let random_access_file_usage_modeled_throws_IOException =
+    StringSet.of_list
+      [ "getFD"
+      ; "getFilePointer"
+      ; "length"
+      ; "read"
+      ; "readBoolean"
+      ; "readByte"
+      ; "readChar"
+      ; "readDouble"
+      ; "readFloat"
+      ; "readFully"
+      ; "readInt"
+      ; "readLine"
+      ; "readLong"
+      ; "readShort"
+      ; "readUTF"
+      ; "readUnsignedByte"
+      ; "readUnsignedShort"
+      ; "seek"
+      ; "setLength"
+      ; "skipBytes"
+      ; "write"
+      ; "writeBoolean"
+      ; "writeByte"
+      ; "writeBytes"
+      ; "writeChar"
+      ; "writeChars"
+      ; "writeDouble"
+      ; "writeFloat"
+      ; "writeInt"
+      ; "writeLong"
+      ; "writeShort"
+      ; "writeUTF" ]
+
+
   let inputstream_resource_usage_modeled_throws_IOException =
     StringSet.of_list ["available"; "read"; "reset"; "skip"]
 
@@ -786,6 +826,12 @@ let matchers : matcher list =
        (PatternMatch.Java.implements_one_of
           ["java.io.FileInputStream"; "java.io.FileOutputStream"; "java.io.RandomAccessFile"] )
     &:: "getChannel" <>$ capt_arg_payload $--> Resource.get_channel |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.io.RandomAccessFile")
+    &::+ (fun _ proc_name_str ->
+    StringSet.mem proc_name_str Resource.random_access_file_usage_modeled_throws_IOException )
+    <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+    |> with_non_disj
   ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.ZipFile")
     &:: "<init>" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"java.io.IOException"

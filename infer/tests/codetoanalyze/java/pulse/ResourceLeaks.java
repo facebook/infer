@@ -865,12 +865,37 @@ public class ResourceLeaks {
     }
   }
 
-  private String FN_readInstallationFileBad(File installation) throws IOException {
+  private String readInstallationFileBad(File installation) throws IOException {
     RandomAccessFile f = new RandomAccessFile(installation, "r");
     byte[] bytes = new byte[(int) f.length()];
     f.readFully(bytes);
     f.close();
     return new String(bytes);
+  }
+
+  // RandomAccessFile reads, writes and seeks may throw IOException and do not close the file.
+
+  public void randomAccessFileNotClosedAfterLengthBad(File file) throws IOException {
+    RandomAccessFile f = new RandomAccessFile(file, "r");
+    f.length();
+  }
+
+  public void randomAccessFileNotClosedOnWriteExceptionBad(File file) throws IOException {
+    RandomAccessFile f = new RandomAccessFile(file, "rw");
+    f.seek(f.length());
+    f.writeInt(42);
+    f.close();
+  }
+
+  public long randomAccessFileClosedAfterWriteOk(File file) throws IOException {
+    RandomAccessFile f = new RandomAccessFile(file, "rw");
+    try {
+      f.seek(f.length());
+      f.writeInt(42);
+      return f.getFilePointer();
+    } finally {
+      f.close();
+    }
   }
 
   private int readConfigCloseStreamOk(String mTurnConfigUrl) {
