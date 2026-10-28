@@ -40,7 +40,7 @@ module Name : sig
 
     val java_lang_object : t
 
-    val java_lang_string : t [@@warning "-unused-value-declaration"]
+    val java_lang_string : t
 
     val kotlin_coroutines_jvm_internal_restrictedsuspendlambda : t
   end
