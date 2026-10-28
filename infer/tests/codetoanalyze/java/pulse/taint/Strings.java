@@ -74,4 +74,35 @@ public class Strings {
   void viaStringFormatVarArgsIndirectBad() {
     viaStringFormatVarArgsIndirect(InferTaint.inferSecretSource());
   }
+
+  void compareConstantWithTaintedOk() {
+    String source = (String) InferTaint.inferSecretSource();
+    String constant = "name";
+    if (constant.equals(source) || constant.startsWith(source) || constant.indexOf(source) > 0) {
+      InferTaint.inferSensitiveSink(constant);
+    }
+    InferTaint.inferSensitiveSink(constant);
+  }
+
+  void compareTaintedWithConstantBad() {
+    String source = (String) InferTaint.inferSecretSource();
+    if (source.equals("name")) {
+      return;
+    }
+    InferTaint.inferSensitiveSink(source);
+  }
+
+  // primitive values are not tracked as tainted: what matters is how they are checked where they
+  // are used
+  void charOfTaintedOk() {
+    String source = (String) InferTaint.inferSecretSource();
+    char c = source.charAt(0);
+    InferTaint.inferSensitiveSink(String.valueOf(c));
+  }
+
+  void indexInTaintedOk() {
+    String source = (String) InferTaint.inferSecretSource();
+    int i = source.indexOf(",");
+    InferTaint.inferSensitiveSink(String.valueOf(i));
+  }
 }

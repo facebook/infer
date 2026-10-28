@@ -609,6 +609,12 @@ let is_cpp_assignment_operator proc_name_opt =
   Option.exists proc_name_opt ~f:Procname.is_cpp_assignment_operator
 
 
+let is_java_lang_string_method proc_name =
+  Option.exists
+    (Procname.get_class_type_name proc_name)
+    ~f:(Typ.Name.equal StdTyp.Name.Java.java_lang_string)
+
+
 (* returns boolean triple (propagate_to_return, propagate_to_receiver, propagate_to_last_actual) *)
 let compute_taint_propagation_for_unknown_calls_generic tenv proc_name_opt return_typ actuals
     has_added_return_param =
@@ -622,6 +628,12 @@ let compute_taint_propagation_for_unknown_calls_generic tenv proc_name_opt retur
       (false, true, false)
   | _, {Typ.desc= Tvoid}, _ when has_added_return_param ->
       (false, false, true)
+  | Some proc_name, {Typ.desc= Tint _ | Tfloat _}, _
+    when (not is_static) && is_java_lang_string_method proc_name ->
+      (* strings are immutable, so these methods never move data into their receiver, and their
+         primitive results ([equals], [indexOf], [charAt], ...) are not tracked as tainted *)
+      L.d_printfln "immutable receiver, not propagating taint" ;
+      (false, false, false)
   | _, {Typ.desc= Tint _ | Tfloat _ | Tvoid}, _ when not is_static ->
       (* for instance methods with a non-Object return value, propagate the taint to the
              receiver *)
