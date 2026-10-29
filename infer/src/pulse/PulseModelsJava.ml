@@ -297,16 +297,13 @@ module Resource = struct
      makes Pulse drop the resource as soon as one of them is called (#2106). *)
   let zipfile_usage_modeled =
     StringSet.of_list
-      [ "entries"
-      ; "getComment"
-      ; "getEntry"
-      ; "getInputStream"
-      ; "getJarEntry"
-      ; "getManifest"
-      ; "getName"
-      ; "size"
-      ; "stream" ]
+      ["entries"; "getComment"; "getEntry"; "getJarEntry"; "getName"; "size"; "stream"]
 
+
+  (* [ZipFile.getInputStream] and [JarFile.getManifest] read the archive and may throw
+     [IOException] without closing it, so an archive that is only closed on the normal path leaks
+     when they throw. *)
+  let zipfile_usage_modeled_throws_IOException = StringSet.of_list ["getInputStream"; "getManifest"]
 
   (* [java.util.zip.Deflater] and [java.util.zip.Inflater] hold native zlib memory until [end()]
      (or [close()], since JDK 25) is called. The calls below do not release that memory and do not
@@ -839,6 +836,12 @@ let matchers : matcher list =
   ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.ZipFile")
     &::+ (fun _ proc_name_str -> StringSet.mem proc_name_str Resource.zipfile_usage_modeled)
     <>$ any_arg $+...$--> Basic.skip |> with_non_disj
+  ; +map_context_tenv (PatternMatch.Java.implements "java.util.zip.ZipFile")
+    &::+ (fun _ proc_name_str ->
+    StringSet.mem proc_name_str Resource.zipfile_usage_modeled_throws_IOException )
+    <>$ any_arg
+    $+...$--> Resource.use ~exn_class_name:"java.io.IOException"
+    |> with_non_disj
   ; +map_context_tenv
        (PatternMatch.Java.implements_one_of ["java.util.zip.Deflater"; "java.util.zip.Inflater"])
     &:: "<init>" <>$ capt_arg_payload
