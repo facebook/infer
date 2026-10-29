@@ -532,6 +532,7 @@ let rec analyze_callee_can_raise_recursion (analysis_req : AnalysisRequest.t) ~s
         in
         match is_summary_already_computed analysis_req callee_pname specialization with
         | `SummaryReady summary ->
+            RestartScheduler.release_reservations callee_pname ;
             Ok summary
         | `ComputeDefaultSummary ->
             analyze_callee_aux None |> AnalysisResult.of_option
