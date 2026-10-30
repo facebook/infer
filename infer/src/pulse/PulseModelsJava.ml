@@ -815,6 +815,12 @@ let matchers : matcher list =
     $+...$--> Resource.allocate ~exn_class_name:"java.io.FileNotFoundException"
     |> with_non_disj
   ; +map_context_tenv
+       (PatternMatch.Java.implements_one_of
+          ["java.io.PipedInputStream"; "java.io.PipedOutputStream"] )
+    &:: "<init>" <>$ capt_arg_payload
+    $+...$--> Resource.allocate ~exn_class_name:"java.io.IOException"
+    |> with_non_disj
+  ; +map_context_tenv
        (PatternMatch.Java.implements_one_of ["java.net.ServerSocket"; "java.net.Socket"])
     &:: "<init>" <>$ capt_arg_payload
     $+...$--> Resource.allocate ~exn_class_name:"java.io.IOException"

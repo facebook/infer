@@ -411,7 +411,7 @@ public class ResourceLeaks {
 
   // PipedInputStream tests
 
-  public void FN_pipedInputStreamNotClosedAfterReadBad(PipedOutputStream pout) {
+  public void pipedInputStreamNotClosedAfterReadBad(PipedOutputStream pout) {
     PipedInputStream pin;
     try {
       pin = new PipedInputStream(pout);
@@ -428,13 +428,13 @@ public class ResourceLeaks {
       int data = pin.read();
     } catch (IOException e) {
     } finally {
-      pin.close();
+      if (pin != null) pin.close();
     }
   }
 
   // PipedOutputStream tests
 
-  public void FN_pipedOutputStreamNotClosedAfterWriteBad() {
+  public void pipedOutputStreamNotClosedAfterWriteBad() {
     byte[] arr = {1, 2, 3, 4, 5};
     PipedOutputStream pout;
     try {
@@ -452,7 +452,7 @@ public class ResourceLeaks {
       pout.flush();
     } catch (IOException e) {
     } finally {
-      pout.close();
+      if (pout != null) pout.close();
     }
   }
 
